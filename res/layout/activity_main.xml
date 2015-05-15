@@ -95,6 +95,12 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="计算最近点" />
+       
+       <Button 
+           android:id="@+id/scan"
+           android:layout_width="fill_parent"
+           android:layout_height="wrap_content"
+           android:text="Scan"/>
 
         <TextView
             android:id="@+id/wifi"

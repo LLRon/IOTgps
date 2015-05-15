@@ -49,14 +49,12 @@ public class MainActivity extends Activity {
 
 	private TextView wifiText;
 	private WifiManager wifiManager;
-	private List<ScanResult> wifiList;// 扫描结果
 	private Set<String> totalAPs = new HashSet<String>();// 所有的AP点的SSID
 	//private Point point;
 	private ArrayList<Point> totalPoints = new ArrayList<Point>();// 所有的测试点集合
 	Map<String, Integer> minLevel = new HashMap<String, Integer>();// 检测到所有的AP点的level的最小值集合
 
 	private Point tempPoint;
-	int maxSize = 0;
 	double minDistance;//最后一个Point与前面点的最小距离值
 	double distance[];//最后一个Point与面点的距离值数组
 	//int mini;//最小距离值点的下标
@@ -79,6 +77,63 @@ public class MainActivity extends Activity {
 
 	Timer timer;
 	
+	private void scan() {
+		List<ScanResult> wifiList = wifiManager.getScanResults();
+		
+		// 如果当前点扫描到的AP数少于新一轮扫描的结果
+		// 将当前点的AP替换为新的扫描结果
+		if (tempPoint.aps.size() < wifiList.size()) {
+			tempPoint.aps.clear();
+			info += String.valueOf(count) + "\n";
+			for (int i = 0; i < wifiList.size(); i++) {
+				String SSID = null;
+				AP ap = new AP();
+				SSID = wifiList.get(i).SSID;
+
+				if (totalAPs.contains(SSID)) {
+					if (minLevel.get(SSID) > wifiList.get(i).level)
+						minLevel.put(SSID, wifiList.get(i).level);
+				} else {
+					totalAPs.add(SSID);
+					minLevel.put(SSID, wifiList.get(i).level);
+				}
+
+				ap.SSID = SSID;
+				ap.level = wifiList.get(i).level;
+				tempPoint.aps.add(ap);
+				info += "BSSID:" + wifiList.get(i).BSSID
+						+ "  level:" + wifiList.get(i).level + " "
+						+ "frequency" + wifiList.get(i).frequency
+						+ "\n";
+				// write("BSSID:" + wifiList.get(i).BSSID +
+				// "  level:"
+				// + wifiList.get(i).level + " ");
+			}
+			// ps.println();
+			info += "\n";
+			// write("\n");
+		} else {
+			info += String.valueOf(count) + "\n";
+			// write(String.valueOf(count)+"\n");
+			for (int i = 0; i < wifiList.size(); i++) {
+				String SSID = wifiList.get(i).SSID;
+
+				totalAPs.add(SSID);
+
+				info += "BSSID:" + wifiList.get(i).BSSID
+						+ "  level:" + wifiList.get(i).level + " "
+						+ "frequency" + wifiList.get(i).frequency
+						+ "\n";
+				// write("BSSID:" + wifiList.get(i).BSSID +
+				// "  level:"
+				// + wifiList.get(i).level + " ");
+			}
+			// ps.println();
+			info += "\n";
+			// write("\n");
+		}
+	}
+	
 	private Handler handler = new Handler() {
 		/**
 		 * 此方法(1)将从每次扫描的结果中得到AP点最多的一次，并将此点信息加入到totalPoints中，
@@ -86,77 +141,7 @@ public class MainActivity extends Activity {
 		 */
 		public void handleMessage(Message msg) {
 			if (msg.what == 0x123) {
-				if (count != timesValue) {// 执行写入操作{\
-
-					wifiList = wifiManager.getScanResults();
-
-					if (maxSize < wifiList.size()) {
-						tempPoint.aps.clear();
-						maxSize = wifiList.size();
-						info += String.valueOf(count) + "\n";
-						// write(String.valueOf(count)+"\n");
-						for (int i = 0; i < wifiList.size(); i++) {
-							String SSID = null;
-							AP ap = new AP();
-							SSID = wifiList.get(i).SSID;
-
-							if (totalAPs.contains(SSID)) {
-								if (minLevel.get(SSID) > wifiList.get(i).level)
-									minLevel.put(SSID, wifiList.get(i).level);
-							} else {
-								totalAPs.add(SSID);
-								minLevel.put(SSID, wifiList.get(i).level);
-							}
-
-							ap.SSID = SSID;
-							ap.level = wifiList.get(i).level;
-							tempPoint.aps.add(ap);
-							info += "BSSID:" + wifiList.get(i).BSSID
-									+ "  level:" + wifiList.get(i).level + " "
-									+ "frequency" + wifiList.get(i).frequency
-									+ "\n";
-							// write("BSSID:" + wifiList.get(i).BSSID +
-							// "  level:"
-							// + wifiList.get(i).level + " ");
-						}
-						// ps.println();
-						info += "\n";
-						// write("\n");
-					} else {
-						info += String.valueOf(count) + "\n";
-						// write(String.valueOf(count)+"\n");
-						for (int i = 0; i < wifiList.size(); i++) {
-							String SSID = null;
-							SSID = wifiList.get(i).SSID;
-
-							totalAPs.add(SSID);
-
-							info += "BSSID:" + wifiList.get(i).BSSID
-									+ "  level:" + wifiList.get(i).level + " "
-									+ "frequency" + wifiList.get(i).frequency
-									+ "\n";
-							// write("BSSID:" + wifiList.get(i).BSSID +
-							// "  level:"
-							// + wifiList.get(i).level + " ");
-						}
-						// ps.println();
-						info += "\n";
-						// write("\n");
-					}
-				} else {
-					timer.cancel();
-					X.getText().clear();
-					Y.getText().clear();
-					times.getText().clear();
-					interval.getText().clear();
-					count = 0;
-					info += "\n";
-					writeToFile(fileName, info);
-					info = "";
-
-					Toast.makeText(MainActivity.this, "扫描完成！", 9000).show();
-				}
-
+				scan();
 			}
 		}
 	};
@@ -178,6 +163,21 @@ public class MainActivity extends Activity {
 
 		start = (Button) findViewById(R.id.start);
 		calculate = (Button) findViewById(R.id.cal);
+		Button scan = (Button) findViewById(R.id.scan);
+		
+		scan.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				tempPoint = new Point();
+				scan();
+				String str = "";
+				for(int i = 0; i < tempPoint.aps.size(); i ++) {
+					str += tempPoint.aps.get(i).SSID + ": " + String.valueOf(tempPoint.aps.get(i).level) + "\n";
+				}
+				wifiText.setText(str);
+			}
+		});
 
 		start.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
@@ -192,7 +192,6 @@ public class MainActivity extends Activity {
 				tempPoint.x = Integer.valueOf(X.getText().toString());
 				tempPoint.y = Integer.valueOf(Y.getText().toString());
 
-				maxSize = 0;
 				timer = new Timer();
 				APcount = 0;
 				fileName = fileNamEditText.getText().toString();
@@ -210,12 +209,25 @@ public class MainActivity extends Activity {
 
 					@Override
 					public void run() {
-						handler.sendEmptyMessage(0x123);
-						count++;
-						System.out.println(count);
+						if (count < timesValue) {
+							count ++;
+							handler.sendEmptyMessage(0x123);	
+						} else {
+							timer.cancel();
+							X.getText().clear();
+							Y.getText().clear();
+							times.getText().clear();
+							interval.getText().clear();
+							count = 0;
+							info += "\n";
+							writeToFile(fileName, info);
+							info = "";
+
+							Toast.makeText(MainActivity.this, "扫描完成！", 9000).show();
+						}
 					}
 				}, 0, Integer.parseInt(interval.getText().toString()));
-
+				
 				totalPoints.add(tempPoint);
 
 			}
@@ -275,11 +287,10 @@ public class MainActivity extends Activity {
 	//////////////////////////////////////	
 		timesValue = 5;
 		
-		 Point mytempPoint = new Point();
+		Point mytempPoint = new Point();
 		
 		mytempPoint.aps.clear();
 
-		maxSize = 0;
 		timer = new Timer();
 		APcount = 0;
 
@@ -296,11 +307,11 @@ public class MainActivity extends Activity {
 			}
 		}, 0, 200);
 /////////////////////////////////////////////		
-		//Point endPoint = totalPoints.get(totalPoints.size() - 1);
+		
 		for (int i = 0; i < totalPoints.size(); i++) {
 			tempDistance = calculate_Distance(mytempPoint, totalPoints.get(i));
 			
-			System.out.println("No."+i+"tempDistance:"+tempDistance);
+			//System.out.println("No."+i+"tempDistance:"+tempDistance);
 			wifiText.append("No."+i+"tempDistance:"+tempDistance);
 			
 			distance[i] = tempDistance;
