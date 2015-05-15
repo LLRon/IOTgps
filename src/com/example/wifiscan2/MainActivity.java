@@ -51,7 +51,7 @@ public class MainActivity extends Activity {
 	private WifiManager wifiManager;
 	private List<ScanResult> wifiList;// 扫描结果
 	private Set<String> totalAPs = new HashSet<String>();// 所有的AP点的SSID
-	private Point point;
+	//private Point point;
 	private ArrayList<Point> totalPoints = new ArrayList<Point>();// 所有的测试点集合
 	Map<String, Integer> minLevel = new HashMap<String, Integer>();// 检测到所有的AP点的level的最小值集合
 
@@ -65,6 +65,19 @@ public class MainActivity extends Activity {
 	private Button calculate;
 	private EditText X, Y, times, interval, fileNamEditText;
 
+
+	private int count = 0;// 扫描次数
+	private int APcount;// 接入点的个数;
+	private int timesValue;
+
+	public String fileName;
+	PrintStream ps;
+
+	String info = "";
+
+	String path = "";
+
+	Timer timer;
 	
 	private Handler handler = new Handler() {
 		/**
@@ -148,18 +161,6 @@ public class MainActivity extends Activity {
 		}
 	};
 
-	private int count = 0;// 扫描次数
-	private int APcount;// 接入点的个数;
-	private int timesValue;
-
-	public String fileName;
-	PrintStream ps;
-
-	String info = "";
-
-	String path = "";
-
-	Timer timer;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -253,13 +254,14 @@ public class MainActivity extends Activity {
 				sBuilder.append("\nSo the nearestPoint is :Point: " + nearestPoint.x + ", " + nearestPoint.y 
 						+ "\n distance is:" + minDistance);
 
-				wifiText.setText(sBuilder.toString());
+				wifiText.append(sBuilder.toString());
 
 			}
 
 		});
 
 	}
+	
 
 	/**
 	 * 计算距离，并且找出最小距离的点和值。
@@ -269,22 +271,48 @@ public class MainActivity extends Activity {
 		minDistance = Double.MAX_VALUE;
 		int mini = -1;
 		double tempDistance;
-		distance = new double[totalPoints.size() - 1];
+		distance = new double[totalPoints.size()];
+	//////////////////////////////////////	
+		timesValue = 5;
+		
+		 Point mytempPoint = new Point();
+		
+		mytempPoint.aps.clear();
 
-		Point endPoint = totalPoints.get(totalPoints.size() - 1);
+		maxSize = 0;
+		timer = new Timer();
+		APcount = 0;
 
-		for (int i = 0; i < totalPoints.size() - 1; i++) {
-			tempDistance = calculate_Distance(endPoint, totalPoints.get(i));
+		wifiManager.startScan();
+		wifiText.setText("\nStarting Scan...\n");
+
+
+		timer.schedule(new TimerTask() {//定时器
+
+			@Override
+			public void run() {
+				handler.sendEmptyMessage(0x123);
+				count++;
+			}
+		}, 0, 200);
+/////////////////////////////////////////////		
+		//Point endPoint = totalPoints.get(totalPoints.size() - 1);
+		for (int i = 0; i < totalPoints.size(); i++) {
+			tempDistance = calculate_Distance(mytempPoint, totalPoints.get(i));
+			
+			System.out.println("No."+i+"tempDistance:"+tempDistance);
+			wifiText.append("No."+i+"tempDistance:"+tempDistance);
+			
 			distance[i] = tempDistance;
 			if (tempDistance <= minDistance) {
 				minDistance = tempDistance;
 				mini = i;
 			}
 		}
-		
-		if (mini == -1) {
-			return endPoint;
-		}
+		wifiText.append("minDistance:"+minDistance);
+		wifiText.append("mini:"+mini);
+		System.out.println("minDistance:"+minDistance);
+		System.out.println("mini:"+mini);
 		return totalPoints.get(mini);
 
 	}
