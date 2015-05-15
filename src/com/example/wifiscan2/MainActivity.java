@@ -67,7 +67,7 @@ public class MainActivity extends Activity {
 
 
 	private int count = 0;// 扫描次数
-	private int APcount;// 接入点的个数;
+	//private int APcount;// 接入点的个数;
 	private int timesValue;
 
 	public String fileName;
@@ -81,7 +81,7 @@ public class MainActivity extends Activity {
 	
 	private Handler handler = new Handler() {
 		/**
-		 * 此方法(1)将从每次扫描的结果中得到AP点最多的一次，并将此点信息加入到totalPoints中，
+		 * 此方法(1)将从每次扫描的结果中AP点最多的一次，并将此点信息加入到totalPoints中，
 		 * (2)同时构造AP点的level的最小值集合,(3)将检测的结果信息写入文件中
 		 */
 		public void handleMessage(Message msg) {
@@ -174,6 +174,7 @@ public class MainActivity extends Activity {
 		interval = (EditText) findViewById(R.id.interval);
 		wifiText = (TextView) findViewById(R.id.wifi);
 
+		
 		wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 
 		start = (Button) findViewById(R.id.start);
@@ -182,8 +183,9 @@ public class MainActivity extends Activity {
 		start.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 				timesValue = Integer.parseInt(times.getText().toString()) + 1;
-
-				tempPoint = new Point();
+				int intInterval = Integer.parseInt(interval.getText().toString());
+				timer = new Timer();
+/*				tempPoint = new Point();
 
 				tempPoint.aps.clear();
 				tempPoint.x = -1;
@@ -194,7 +196,6 @@ public class MainActivity extends Activity {
 
 				maxSize = 0;
 				timer = new Timer();
-				APcount = 0;
 				fileName = fileNamEditText.getText().toString();
 
 				wifiManager.startScan();
@@ -214,8 +215,8 @@ public class MainActivity extends Activity {
 						count++;
 						System.out.println(count);
 					}
-				}, 0, Integer.parseInt(interval.getText().toString()));
-
+				}, 0, Integer.parseInt(interval.getText().toString()));*/
+				getNowPoint(timesValue,intInterval,timer);
 				totalPoints.add(tempPoint);
 
 			}
@@ -224,33 +225,33 @@ public class MainActivity extends Activity {
 		calculate.setOnClickListener(new OnClickListener() {
 
 			public void onClick(View v) {
-				int i;
-				Point nearestPoint = calculate(); //计算结果
 
-				
+				Point nearestPoint = calculate(); //计算结果
 				//打印结果
 				StringBuilder sBuilder = new StringBuilder();
-//				for (i = 0; i < totalPoints.size() - 1; i++) {
-//					sBuilder.append("\n");
-//					sBuilder.append("Point" + (i + 1) + "X= "
-//							+ totalPoints.get(i).x + " Y= "
-//							+ totalPoints.get(i).y + "\n");
-//					ArrayList<AP> aps = totalPoints.get(i).aps;
-//					for (int j = 0; j < aps.size(); j++) {
-//						sBuilder.append(aps.get(j).SSID + " "
-//								+ aps.get(j).level + "\n");
-//					}
-//					sBuilder.append("Distance:" + distance[i] + "\n\n");
-//				}
-//
-//				sBuilder.append("The measure point: X= " + totalPoints.get(i).x
-//						+ " Y= " + totalPoints.get(i).y + "\n");
-//				ArrayList<AP> aps = totalPoints.get(i).aps;
-//				for (int j = 0; j < aps.size(); j++) {
-//					sBuilder.append(aps.get(j).SSID + " " + aps.get(j).level
-//							+ "\n");
-//				}
+				
+/*				int i;					
+			for (i = 0; i < totalPoints.size() - 1; i++) {
+					sBuilder.append("\n");
+					sBuilder.append("Point" + (i + 1) + "X= "
+							+ totalPoints.get(i).x + " Y= "
+							+ totalPoints.get(i).y + "\n");
+					ArrayList<AP> aps = totalPoints.get(i).aps;
+					for (int j = 0; j < aps.size(); j++) {
+						sBuilder.append(aps.get(j).SSID + " "
+								+ aps.get(j).level + "\n");
+					}
+					sBuilder.append("Distance:" + distance[i] + "\n\n");
+				}
 
+				sBuilder.append("The measure point: X= " + totalPoints.get(i).x
+						+ " Y= " + totalPoints.get(i).y + "\n");
+				ArrayList<AP> aps = totalPoints.get(i).aps;
+				for (int j = 0; j < aps.size(); j++) {
+					sBuilder.append(aps.get(j).SSID + " " + aps.get(j).level
+							+ "\n");
+				}
+*/
 				sBuilder.append("\nSo the nearestPoint is :Point: " + nearestPoint.x + ", " + nearestPoint.y 
 						+ "\n distance is:" + minDistance);
 
@@ -262,7 +263,45 @@ public class MainActivity extends Activity {
 
 	}
 	
+	/**
+	 * 获取当前的点的各个AP强度level
+	 * @return
+	 */
+	public Point getNowPoint(int mTimesValue,int interval,Timer myTimer) {
+		tempPoint = new Point();
+		timesValue = mTimesValue;
+		maxSize = 0;
+		fileName = fileNamEditText.getText().toString();	
+		
+		tempPoint.aps.clear();
+		//区别采样取点和当前测试取点
+		if(!X.getText().toString().equals("") && !Y.getText().toString().equals("")){
+		tempPoint.x = -1;
+		tempPoint.y = -1;
+		tempPoint.x = Integer.valueOf(X.getText().toString());
+		tempPoint.y = Integer.valueOf(Y.getText().toString());		
 
+		info += (new Date().toLocaleString());
+		info += " X= " + X.getText().toString() + " Y= "
+				+ Y.getText().toString() + " 次数："
+				+ times.getText().toString() + " 间隔："
+				+ interval + "ms\n";
+		}
+		wifiManager.startScan();
+		wifiText.setText("\nStarting Scan...\n");
+		
+		myTimer.schedule(new TimerTask() {//定时器
+
+			@Override
+			public void run() {
+				handler.sendEmptyMessage(0x123);
+				count++;
+			}
+		}, 0, interval);		
+		
+		return tempPoint;
+	}
+	
 	/**
 	 * 计算距离，并且找出最小距离的点和值。
 	 * @return
@@ -271,32 +310,10 @@ public class MainActivity extends Activity {
 		minDistance = Double.MAX_VALUE;
 		int mini = -1;
 		double tempDistance;
-		distance = new double[totalPoints.size()];
-	//////////////////////////////////////	
-		timesValue = 5;
-		
-		 Point mytempPoint = new Point();
-		
-		mytempPoint.aps.clear();
-
-		maxSize = 0;
+		distance = new double[totalPoints.size()];		
 		timer = new Timer();
-		APcount = 0;
-
-		wifiManager.startScan();
-		wifiText.setText("\nStarting Scan...\n");
-
-
-		timer.schedule(new TimerTask() {//定时器
-
-			@Override
-			public void run() {
-				handler.sendEmptyMessage(0x123);
-				count++;
-			}
-		}, 0, 200);
-/////////////////////////////////////////////		
-		//Point endPoint = totalPoints.get(totalPoints.size() - 1);
+		Point mytempPoint = getNowPoint(10,200,timer);
+		
 		for (int i = 0; i < totalPoints.size(); i++) {
 			tempDistance = calculate_Distance(mytempPoint, totalPoints.get(i));
 			
