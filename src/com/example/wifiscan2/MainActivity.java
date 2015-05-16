@@ -59,7 +59,10 @@ public class MainActivity extends Activity {
 
 	private Button start;
 	private Button calculate;
-	private EditText X, Y, times, interval, fileNamEditText;
+	private Button scan;
+	private Button set;
+	
+	private EditText X, Y, timesField, intervalField, fileNameEditText;
 
 
 	private int count = 0;// 扫描次数
@@ -69,8 +72,11 @@ public class MainActivity extends Activity {
 	PrintStream ps;
 
 	String info = "";
-
-	String path = "";
+	
+	// settings
+	private int interval = 50;
+	private int times = 20;
+	private String path = "wifi.txt";
 
 	private Timer timer;
 	private Runnable done;	// 用于timer完成后回调的自定义函数调用
@@ -166,20 +172,36 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
+		wifiText = (TextView) findViewById(R.id.wifiText);
+		start = (Button) findViewById(R.id.add);
+		calculate = (Button) findViewById(R.id.cal);
+		scan = (Button) findViewById(R.id.scan);
+		set = (Button) findViewById(R.id.set);
 		X = (EditText) findViewById(R.id.x);
 		Y = (EditText) findViewById(R.id.y);
-		times = (EditText) findViewById(R.id.times);
-		fileNamEditText = (EditText) findViewById(R.id.fileName);
-		interval = (EditText) findViewById(R.id.interval);
-		wifiText = (TextView) findViewById(R.id.wifi);
+		timesField = (EditText) findViewById(R.id.times);
+		intervalField = (EditText) findViewById(R.id.duration);
+		fileNameEditText = (EditText) findViewById(R.id.file);
+		
+		// display the default value
+		timesField.setText(String.valueOf(times));
+		intervalField.setText(String.valueOf(interval));
+		fileNameEditText.setText(String.valueOf(path));
+		
 
 		wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-
-		start = (Button) findViewById(R.id.start);
-		calculate = (Button) findViewById(R.id.cal);
-		Button scan = (Button) findViewById(R.id.scan);
 		
 		timer = new Timer();
+		
+		set.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				interval = Integer.valueOf((intervalField.getText().toString()));
+				times = Integer.valueOf((timesField.getText().toString()));
+			}
+			
+		});
 		
 		scan.setOnClickListener(new OnClickListener() {
 			
@@ -197,8 +219,6 @@ public class MainActivity extends Activity {
 
 		start.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-				int timesValue = Integer.parseInt(times.getText().toString()) + 1;
-				int intInterval = Integer.parseInt(interval.getText().toString());
 /*				tempPoint = new Point();
 
 				tempPoint.aps.clear();
@@ -242,7 +262,7 @@ public class MainActivity extends Activity {
 						}
 					}
 				}, 0, Integer.parseInt(interval.getText().toString()));*/
-				getNowPoint(timesValue,intInterval);
+				getNowPoint(times,interval);
 				
 				System.out.println(tempPoint.aps.size());
 				totalPoints.add(tempPoint);
@@ -297,7 +317,7 @@ public class MainActivity extends Activity {
 	 */
 	public void getNowPoint(final int timesValue,int interval) {
 		tempPoint = new Point();
-		fileName = fileNamEditText.getText().toString();	
+		fileName = fileNameEditText.getText().toString();	
 		
 		tempPoint.aps.clear();
 		//区别采样取点和当前测试取点
@@ -310,7 +330,7 @@ public class MainActivity extends Activity {
 		info += (new Date().toLocaleString());
 		info += " X= " + X.getText().toString() + " Y= "
 				+ Y.getText().toString() + " 次数："
-				+ times.getText().toString() + " 间隔："
+				+ timesField.getText().toString() + " 间隔："
 				+ interval + "ms\n";
 		}
 		wifiText.setText("\nStarting Scan...\n");
@@ -369,7 +389,7 @@ public class MainActivity extends Activity {
 		
 		// TODO: 这个地方， getNowPoint调用了一个Timer，在timer完成之前已经返回了
 		// 因此此处返回的mytempPoint的ap应该是空的，后面的计算就会出错！
-		getNowPoint(40, 30);
+		getNowPoint(times, interval);
 		
 		System.out.println(tempPoint.aps.size());
 		
