@@ -7,6 +7,7 @@ package com.example.wifiscan2;
  */
 public class AP {
 	String SSID;
+	String BSSID;
 	int level;
 }
 
