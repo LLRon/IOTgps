@@ -75,27 +75,72 @@ public class MainActivity extends Activity {
 	private Timer timer;
 	private Runnable done;	// 用于timer完成后回调的自定义函数调用
 	
-	private void scan() {
+	private Map<String,ArrayList<AP>> scan(Map<String,ArrayList<AP>> tempAPs) {
 		wifiManager.startScan();
 		List<ScanResult> wifiList = wifiManager.getScanResults();
+
 		
-		// 如果当前点扫描到的AP数少于新一轮扫描的结果
-		// 将当前点的AP替换为新的扫描结果
-		
+		//将所有扫描到的AP点强度取平均值作为AP的level		
 		System.out.println("wifiList " + wifiList.size());
 		System.out.println("minLevel " + minLevel.size());
 		
-		if (tempPoint.aps.size() < wifiList.size()) {
+		tempPoint.aps.clear();
+		info += String.valueOf(count) + "\n";
+		
+		for (int i = 0; i < wifiList.size(); i++) {
+
+			ScanResult ret = wifiList.get(i);			
+			String BSSID = ret.BSSID;
+			String SSID = ret.SSID;		
+			AP ap;
+			ArrayList<AP> tempAPsList = new ArrayList<AP>();
+			
+			ap = new AP();			
+			ap.SSID = SSID;
+			ap.BSSID = BSSID;
+			ap.level = ret.level;			
+			
+			//搜索原来的tempAPs中是否含有本次扫描到的AP点
+			if(!tempAPs.keySet().contains(BSSID)) {
+
+				tempAPsList.add(ap);				
+				tempAPs.put(BSSID, tempAPsList);
+			} else{
+				
+				tempAPs.get(BSSID).add(ap);				
+			}
+			
+			//tempPoint.aps.add(ap);
+			
+			//收集最小AP强度集合				
+			if (minLevel.keySet().contains(BSSID)) {
+				if (minLevel.get(BSSID) > ret.level)
+					minLevel.put(BSSID, ret.level);
+			} else {
+				minLevel.put(BSSID, ret.level);
+			}
+			
+			info += "BSSID:" + BSSID
+					+ "  level:" + ret.level + " "
+					+ "frequency" + ret.frequency
+					+ "\n";
+			// write("BSSID:" + wifiList.get(i).BSSID +
+			// "  level:"
+			// + wifiList.get(i).level + " ");
+		}
+		// ps.println();
+		info += "\n";
+		return tempAPs;
+		// write("\n");
+/*		if (tempPoint.aps.size() < wifiList.size()) {
 			tempPoint.aps.clear();
 			info += String.valueOf(count) + "\n";
 			
 			for (int i = 0; i < wifiList.size(); i++) {
 
-				ScanResult ret = wifiList.get(i);
-				
+				ScanResult ret = wifiList.get(i);				
 				String BSSID = ret.BSSID;
-				String SSID = ret.SSID;
-				
+				String SSID = ret.SSID;				
 				AP ap = new AP();
 
 				if (minLevel.keySet().contains(BSSID)) {
@@ -109,6 +154,7 @@ public class MainActivity extends Activity {
 				ap.BSSID = BSSID;
 				ap.level = ret.level;
 				tempPoint.aps.add(ap);
+				
 				info += "BSSID:" + BSSID
 						+ "  level:" + ret.level + " "
 						+ "frequency" + ret.frequency
@@ -138,7 +184,8 @@ public class MainActivity extends Activity {
 			// ps.println();
 			info += "\n";
 			// write("\n");
-		}
+		}*/
+		
 	}
 	
 	private Handler handler = new Handler() {
@@ -149,7 +196,8 @@ public class MainActivity extends Activity {
 		public void handleMessage(Message msg) {
 			if (msg.what == 0x123) {
 				// not finish
-				scan();
+				//scan函数改变，参数添加
+				scan(new HashMap<String,ArrayList<AP>>());
 			} else if (msg.what == 0x124) {
 				// finish
 				info += "\n";
@@ -186,7 +234,9 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				tempPoint = new Point();
-				scan();
+				//参数改变
+				//scan(new HashMap<String,ArrayList<AP>>());
+				getNowPoint(10,200);
 				String str = "";
 				for(int i = 0; i < tempPoint.aps.size(); i ++) {
 					str += tempPoint.aps.get(i).SSID + ": " + String.valueOf(tempPoint.aps.get(i).level) + "\n";
@@ -298,7 +348,6 @@ public class MainActivity extends Activity {
 	public void getNowPoint(final int timesValue,int interval) {
 		tempPoint = new Point();
 		fileName = fileNamEditText.getText().toString();	
-		
 		tempPoint.aps.clear();
 		//区别采样取点和当前测试取点
 		if(!X.getText().toString().equals("") && !Y.getText().toString().equals("")){
@@ -336,9 +385,10 @@ public class MainActivity extends Activity {
 //			}
 //		}, 0, interval);
 		
+		Map<String,ArrayList<AP>> tempAPs = new HashMap<String,ArrayList<AP>>();
 		// 切换为非线程的while循环。。
 		while (count ++ < timesValue) {
-			scan();
+			tempAPs = scan(tempAPs);
 			try {
 				Thread.sleep(interval);
 			} catch (InterruptedException e) {
@@ -346,7 +396,32 @@ public class MainActivity extends Activity {
 				e.printStackTrace();
 			}
 		}
+
 		
+		//遍历tempAPs，取各个AP强度的平均值写入tempPoint
+		Set keySet = tempAPs.keySet();
+		
+		for(Object key : keySet) {
+			
+			AP ap = new AP();			
+			ap.BSSID = String.valueOf(key);
+			ap.SSID = tempAPs.get(key).get(0).SSID;
+			int sum = 0;
+			double averageLevel = 0;//定义平均强度
+			int APtimes = tempAPs.get(key).size() ;//同一个AP采集次数
+			
+			//计算平均强度
+			for(int i = 0;i < APtimes; i++) {
+			sum += tempAPs.get(key).get(i).level;
+			}			
+			averageLevel = sum / APtimes;
+			
+			ap.level = averageLevel;
+			tempPoint.aps.add(ap);
+		}
+		
+		
+	//	tempPoint.aps.add(object);
 		// finish
 		count = 0;
 		info += "\n";
@@ -385,8 +460,8 @@ public class MainActivity extends Activity {
 				mini = i;
 			}
 		}
-		wifiText.append("minDistance:"+minDistance);
-		wifiText.append("mini:"+mini);
+		wifiText.append("minDistance:"+minDistance+"\n");
+		wifiText.append("mini:"+mini+"\n");
 		System.out.println("minDistance:"+minDistance);
 		System.out.println("mini:"+mini);
 		return totalPoints.get(mini);
@@ -402,8 +477,8 @@ public class MainActivity extends Activity {
 	private double calculate_Distance(Point point1, Point point2) {
 		float result = 0.0f;
 		String str;
-		Map<String, Integer> tempMap1 = new HashMap<String, Integer>();
-		Map<String, Integer> tempMap2 = new HashMap<String, Integer>();
+		Map<String, Double> tempMap1 = new HashMap<String, Double>();
+		Map<String, Double> tempMap2 = new HashMap<String, Double>();
 
 		int i, j;
 
