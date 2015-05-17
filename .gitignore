@@ -5,3 +5,4 @@ New_configuration.launch
 .gradle/
 build/
 app/build/
+local.properties

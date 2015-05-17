@@ -22,6 +22,7 @@ import java.util.TimerTask;
 
 import org.apache.http.impl.conn.Wire;
 
+import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -34,6 +35,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -45,9 +53,15 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity implements MainFragment.OnFragmentInteractionListener, SettingFragment.OnFragmentInteractionListener {
 
-	private TextView wifiText;
+    // save the fragment
+    ArrayList<Fragment> mFragments;
+
+    private ViewPager mPager;
+
+    private PagerAdapter mPagerAdapter;
+
 	private WifiManager wifiManager;
 	//private Point point;
 	private ArrayList<Point> totalPoints = new ArrayList<Point>();// 所有的测试点集合
@@ -56,13 +70,10 @@ public class MainActivity extends Activity {
 	private Point tempPoint;
 	double minDistance;//最后一个Point与前面点的最小距离值
 	//int mini;//最小距离值点的下标
-	
-	private EditText X, Y, timesField, intervalField, fileNameEditText;
-
 
 	private int count = 0;// 扫描次数
 
-	public String fileName;
+	public String fileName = "wifi.txt";
 
 	String info = "";
 	
@@ -213,55 +224,56 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		wifiText = (TextView) findViewById(R.id.wifiText);
-		Button start = (Button) findViewById(R.id.add);
-		Button calculate = (Button) findViewById(R.id.cal);
-		Button scan = (Button) findViewById(R.id.scan);
-		Button set = (Button) findViewById(R.id.set);
-		X = (EditText) findViewById(R.id.x);
-		Y = (EditText) findViewById(R.id.y);
-		timesField = (EditText) findViewById(R.id.times);
-		intervalField = (EditText) findViewById(R.id.duration);
-		fileNameEditText = (EditText) findViewById(R.id.file);
-		
-		// display the default value
-		timesField.setText(String.valueOf(times));
-		intervalField.setText(String.valueOf(interval));
-		fileNameEditText.setText(String.valueOf("wifi.txt"));
-		
+        mFragments = new ArrayList<Fragment>(2);
+
+        Bundle bundle = new Bundle();
+        bundle.putString("fileName", fileName);
+        bundle.putInt("interval", interval);
+        bundle.putInt("times", times);
+
+        // add in two fragments
+        mFragments.add(new MainFragment());
+        SettingFragment settingFrag = new SettingFragment();
+        settingFrag.setArguments(bundle);
+        mFragments.add(settingFrag);
+
+        // Instantiate a ViewPager and a PagerAdapter.
+        mPager = (ViewPager) findViewById(R.id.pager);
+        mPagerAdapter = new SettingPagerAdapter(getSupportFragmentManager());
+        mPager.setAdapter(mPagerAdapter);
 
 		wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-		
-		//timer = new Timer();
-		
-		set.setOnClickListener(new OnClickListener() {
 
-			@Override
-			public void onClick(View arg0) {
-				interval = Integer.valueOf((intervalField.getText().toString()));
-				times = Integer.valueOf((timesField.getText().toString()));
-			}
-			
-		});
-		
-		scan.setOnClickListener(new OnClickListener() {
-			
-			@Override
-			public void onClick(View v) {
-				tempPoint = new Point();
-				//参数改变
-				//scan(new HashMap<String,ArrayList<AP>>());
-				getNowPoint(10,200);
-				String str = "";
-				for(int i = 0; i < tempPoint.aps.size(); i ++) {
-					str += tempPoint.aps.get(i).SSID + ": " + String.valueOf(tempPoint.aps.get(i).level) + "\n";
-				}
-				wifiText.setText(str);
-			}
-		});
+	}
 
-		start.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
+    @Override
+    public void onFragmentInteraction(Uri uri) {
+
+    }
+
+    @Override
+    public void onSet(int interval, int times, String fileName) {
+        this.interval = interval;
+        this.times = times;
+        this.fileName = fileName;
+    }
+
+    @Override
+    public void onScan(TextView logger) {
+        tempPoint = new Point();
+        //参数改变
+        //scan(new HashMap<String,ArrayList<AP>>());
+        // 临时点的x y默认为 -1 -1.
+        getNowPoint(-1, -1, 10,200);
+        String str = "";
+        for(int i = 0; i < tempPoint.aps.size(); i ++) {
+            str += tempPoint.aps.get(i).SSID + ": " + String.valueOf(tempPoint.aps.get(i).level) + "\n";
+        }
+        logger.setText(str);
+    }
+
+    @Override
+    public void onAdd(int x, int y) {
 /*				tempPoint = new Point();
 
 				tempPoint.aps.clear();
@@ -289,7 +301,7 @@ public class MainActivity extends Activity {
 					public void run() {
 						if (count < timesValue) {
 							count ++;
-							handler.sendEmptyMessage(0x123);	
+							handler.sendEmptyMessage(0x123);
 						} else {
 							timer.cancel();
 							X.getText().clear();
@@ -305,77 +317,85 @@ public class MainActivity extends Activity {
 						}
 					}
 				}, 0, Integer.parseInt(interval.getText().toString()));*/
-				getNowPoint(times,interval);
-				
-				System.out.println(tempPoint.aps.size());
-				totalPoints.add(tempPoint);
+        getNowPoint(x, y, times,interval);
 
-			}
-		});
+        System.out.println(tempPoint.aps.size());
+        totalPoints.add(tempPoint);
+    }
 
-		calculate.setOnClickListener(new OnClickListener() {
+    @Override
+    public void onCal(TextView logger) {
 
-			public void onClick(View v) {
+        Point nearestPoint = calculate(logger); //计算结果
+        //打印结果
+        StringBuilder sBuilder = new StringBuilder();
 
-				Point nearestPoint = calculate(); //计算结果
-				//打印结果
-				StringBuilder sBuilder = new StringBuilder();
-				
-/*				int i;					
-			for (i = 0; i < totalPoints.size() - 1; i++) {
-					sBuilder.append("\n");
-					sBuilder.append("Point" + (i + 1) + "X= "
-							+ totalPoints.get(i).x + " Y= "
-							+ totalPoints.get(i).y + "\n");
-					ArrayList<AP> aps = totalPoints.get(i).aps;
-					for (int j = 0; j < aps.size(); j++) {
-						sBuilder.append(aps.get(j).SSID + " "
-								+ aps.get(j).level + "\n");
-					}
-					sBuilder.append("Distance:" + distance[i] + "\n\n");
-				}
+/*			int i;
+        for (i = 0; i < totalPoints.size() - 1; i++) {
+            sBuilder.append("\n");
+            sBuilder.append("Point" + (i + 1) + "X= "
+                    + totalPoints.get(i).x + " Y= "
+                    + totalPoints.get(i).y + "\n");
+            ArrayList<AP> aps = totalPoints.get(i).aps;
+            for (int j = 0; j < aps.size(); j++) {
+                sBuilder.append(aps.get(j).SSID + " "
+                        + aps.get(j).level + "\n");
+            }
+            sBuilder.append("Distance:" + distance[i] + "\n\n");
+        }
 
-				sBuilder.append("The measure point: X= " + totalPoints.get(i).x
-						+ " Y= " + totalPoints.get(i).y + "\n");
-				ArrayList<AP> aps = totalPoints.get(i).aps;
-				for (int j = 0; j < aps.size(); j++) {
-					sBuilder.append(aps.get(j).SSID + " " + aps.get(j).level
-							+ "\n");
-				}
+        sBuilder.append("The measure point: X= " + totalPoints.get(i).x
+                + " Y= " + totalPoints.get(i).y + "\n");
+        ArrayList<AP> aps = totalPoints.get(i).aps;
+        for (int j = 0; j < aps.size(); j++) {
+            sBuilder.append(aps.get(j).SSID + " " + aps.get(j).level
+                    + "\n");
+        }
 */
-				sBuilder.append("\nSo the nearestPoint is :Point: " + nearestPoint.x + ", " + nearestPoint.y 
-						+ "\n distance is:" + minDistance);
+        sBuilder.append("\nSo the nearestPoint is :Point: " + nearestPoint.x + ", " + nearestPoint.y
+                + "\n distance is:" + minDistance);
 
-				wifiText.append(sBuilder.toString());
+        logger.append(sBuilder.toString());
 
-			}
+    }
 
-		});
+    private class SettingPagerAdapter extends FragmentStatePagerAdapter {
 
-	}
+
+        public SettingPagerAdapter(FragmentManager fm) {
+            super(fm);
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+            return mFragments.get(position);
+        }
+
+        @Override
+        public int getCount() {
+            return mFragments.size();
+        }
+    }
 	
 	/**
 	 * 获取当前的点的各个AP强度level
 	 */
-	public void getNowPoint(final int timesValue,int interval) {
+	public void getNowPoint(int x, int y, final int timesValue,int interval) {
 		tempPoint = new Point();
-		fileName = fileNameEditText.getText().toString();	
 
 		tempPoint.aps.clear();
 		//区别采样取点和当前测试取点
-		if(!X.getText().toString().equals("") && !Y.getText().toString().equals("")){
-		tempPoint.x = -1;
-		tempPoint.y = -1;
-		tempPoint.x = Integer.valueOf(X.getText().toString());
-		tempPoint.y = Integer.valueOf(Y.getText().toString());		
+
+		tempPoint.x = x;
+		tempPoint.y = y;
 
 		info += (new Date().toString());
-		info += " X= " + X.getText().toString() + " Y= "
-				+ Y.getText().toString() + " 次数："
-				+ timesField.getText().toString() + " 间隔："
+		info += " X= " + x + " Y= "
+				+ y + " 次数："
+				+ timesValue + " 间隔："
 				+ interval + "ms\n";
-		}
-		wifiText.setText("\nStarting Scan...\n");
+
+		Toast.makeText(this, "Start scanning", Toast.LENGTH_LONG);
 		
 //		// 清空timer里面的所有任务
 //		timer.purge();
@@ -405,7 +425,6 @@ public class MainActivity extends Activity {
 			try {
 				Thread.sleep(interval);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -446,15 +465,12 @@ public class MainActivity extends Activity {
 	/**
 	 * 计算距离，并且找出最小距离的点和值。
 	 */
-	private Point calculate() {
+	private Point calculate(TextView logger) {
 		minDistance = Double.MAX_VALUE;
 		int mini = -1;
 		double tempDistance;
 
-		
-		// TODO: 这个地方， getNowPoint调用了一个Timer，在timer完成之前已经返回了
-		// 因此此处返回的mytempPoint的ap应该是空的，后面的计算就会出错！
-		getNowPoint(times, interval);
+		getNowPoint(-1, - 1, times, interval);
 		
 		System.out.println(tempPoint.aps.size());
 		
@@ -462,15 +478,15 @@ public class MainActivity extends Activity {
 			tempDistance = calculate_Distance(tempPoint, totalPoints.get(i));
 			
 			//System.out.println("No."+i+"tempDistance:"+tempDistance);
-			wifiText.append("No."+i+" tempDistance:"+tempDistance + "\n");
+            logger.append("No."+i+" tempDistance:"+tempDistance + "\n");
 
 			if (tempDistance <= minDistance) {
 				minDistance = tempDistance;
 				mini = i;
 			}
 		}
-		wifiText.append("minDistance:"+minDistance+"\n");
-		wifiText.append("mini:"+mini+"\n");
+        logger.append("minDistance:"+minDistance+"\n");
+        logger.append("mini:"+mini+"\n");
 		System.out.println("minDistance:"+minDistance);
 		System.out.println("mini:"+mini);
 		return totalPoints.get(mini);
@@ -559,7 +575,7 @@ public class MainActivity extends Activity {
 
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
 		wifiManager.startScan();
-		wifiText.setText("Starting Scan");
+		Toast.makeText(this, "Start scanning", Toast.LENGTH_LONG).show();
 		return super.onMenuItemSelected(featureId, item);
 	}
 
