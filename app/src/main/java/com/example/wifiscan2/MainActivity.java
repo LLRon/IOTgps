@@ -50,12 +50,12 @@ public class MainActivity extends Activity {
 	private TextView wifiText;
 	private WifiManager wifiManager;
 	//private Point point;
-	private ArrayList<Point> totalPoints = new ArrayList<Point>();// ËùÓĞµÄ²âÊÔµã¼¯ºÏ
-	Map<String, Integer> minLevel = new HashMap<String, Integer>();// ¼ì²âµ½ËùÓĞµÄAPµãµÄlevelµÄ×îĞ¡Öµ¼¯ºÏ
+	private ArrayList<Point> totalPoints = new ArrayList<Point>();// æ‰€æœ‰çš„æµ‹è¯•ç‚¹é›†åˆ
+	Map<String, Integer> minLevel = new HashMap<String, Integer>();// æ£€æµ‹åˆ°æ‰€æœ‰çš„APç‚¹çš„levelçš„æœ€å°å€¼é›†åˆ
 
 	private Point tempPoint;
-	double minDistance;//×îºóÒ»¸öPointÓëÇ°ÃæµãµÄ×îĞ¡¾àÀëÖµ
-	//int mini;//×îĞ¡¾àÀëÖµµãµÄÏÂ±ê
+	double minDistance;//æœ€åä¸€ä¸ªPointä¸å‰é¢ç‚¹çš„æœ€å°è·ç¦»å€¼
+	//int mini;//æœ€å°è·ç¦»å€¼ç‚¹çš„ä¸‹æ ‡
 
 	private Button start;
 	private Button calculate;
@@ -65,8 +65,8 @@ public class MainActivity extends Activity {
 	private EditText X, Y, timesField, intervalField, fileNameEditText;
 
 
-	private int count = 0;// É¨Ãè´ÎÊı
-	//private int APcount;// ½ÓÈëµãµÄ¸öÊı;
+	private int count = 0;// æ‰«ææ¬¡æ•°
+	//private int APcount;// æ¥å…¥ç‚¹çš„ä¸ªæ•°;
 
 	public String fileName;
 	PrintStream ps;
@@ -79,14 +79,14 @@ public class MainActivity extends Activity {
 	private String path = "wifi.txt";
 
 	private Timer timer;
-	private Runnable done;	// ÓÃÓÚtimerÍê³Éºó»Øµ÷µÄ×Ô¶¨Òåº¯Êıµ÷ÓÃ
+	private Runnable done;	// ç”¨äºtimerå®Œæˆåå›è°ƒçš„è‡ªå®šä¹‰å‡½æ•°è°ƒç”¨
 	
 	private Map<String,ArrayList<AP>> scan(Map<String,ArrayList<AP>> tempAPs) {
 		wifiManager.startScan();
 		List<ScanResult> wifiList = wifiManager.getScanResults();
 
 		
-		//½«ËùÓĞÉ¨Ãèµ½µÄAPµãÇ¿¶ÈÈ¡Æ½¾ùÖµ×÷ÎªAPµÄlevel		
+		//å°†æ‰€æœ‰æ‰«æåˆ°çš„APç‚¹å¼ºåº¦å–å¹³å‡å€¼ä½œä¸ºAPçš„level		
 		System.out.println("wifiList " + wifiList.size());
 		System.out.println("minLevel " + minLevel.size());
 		
@@ -106,7 +106,7 @@ public class MainActivity extends Activity {
 			ap.BSSID = BSSID;
 			ap.level = ret.level;			
 			
-			//ËÑË÷Ô­À´µÄtempAPsÖĞÊÇ·ñº¬ÓĞ±¾´ÎÉ¨Ãèµ½µÄAPµã
+			//æœç´¢åŸæ¥çš„tempAPsä¸­æ˜¯å¦å«æœ‰æœ¬æ¬¡æ‰«æåˆ°çš„APç‚¹
 			if(!tempAPs.keySet().contains(BSSID)) {
 
 				tempAPsList.add(ap);				
@@ -118,7 +118,7 @@ public class MainActivity extends Activity {
 			
 			//tempPoint.aps.add(ap);
 			
-			//ÊÕ¼¯×îĞ¡APÇ¿¶È¼¯ºÏ				
+			//æ”¶é›†æœ€å°APå¼ºåº¦é›†åˆ				
 			if (minLevel.keySet().contains(BSSID)) {
 				if (minLevel.get(BSSID) > ret.level)
 					minLevel.put(BSSID, ret.level);
@@ -196,20 +196,20 @@ public class MainActivity extends Activity {
 	
 	private Handler handler = new Handler() {
 		/**
-		 * ´Ë·½·¨(1)½«´ÓÃ¿´ÎÉ¨ÃèµÄ½á¹ûÖĞAPµã×î¶àµÄÒ»´Î£¬²¢½«´ËµãĞÅÏ¢¼ÓÈëµ½totalPointsÖĞ£¬
-		 * (2)Í¬Ê±¹¹ÔìAPµãµÄlevelµÄ×îĞ¡Öµ¼¯ºÏ,(3)½«¼ì²âµÄ½á¹ûĞÅÏ¢Ğ´ÈëÎÄ¼şÖĞ
+		 * æ­¤æ–¹æ³•(1)å°†ä»æ¯æ¬¡æ‰«æçš„ç»“æœä¸­APç‚¹æœ€å¤šçš„ä¸€æ¬¡ï¼Œå¹¶å°†æ­¤ç‚¹ä¿¡æ¯åŠ å…¥åˆ°totalPointsä¸­ï¼Œ
+		 * (2)åŒæ—¶æ„é€ APç‚¹çš„levelçš„æœ€å°å€¼é›†åˆ,(3)å°†æ£€æµ‹çš„ç»“æœä¿¡æ¯å†™å…¥æ–‡ä»¶ä¸­
 		 */
 		public void handleMessage(Message msg) {
 			if (msg.what == 0x123) {
 				// not finish
-				//scanº¯Êı¸Ä±ä£¬²ÎÊıÌí¼Ó
+				//scanå‡½æ•°æ”¹å˜ï¼Œå‚æ•°æ·»åŠ 
 				scan(new HashMap<String,ArrayList<AP>>());
 			} else if (msg.what == 0x124) {
 				// finish
 				info += "\n";
 				writeToFile(fileName, info);
 				info = "";
-				Toast.makeText(MainActivity.this, "É¨ÃèÍê³É£¡", 4000).show();
+				Toast.makeText(MainActivity.this, "æ‰«æå®Œæˆï¼", Toast.LENGTH_SHORT).show();
 			}
 		}
 	};
@@ -256,7 +256,7 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				tempPoint = new Point();
-				//²ÎÊı¸Ä±ä
+				//å‚æ•°æ”¹å˜
 				//scan(new HashMap<String,ArrayList<AP>>());
 				getNowPoint(10,200);
 				String str = "";
@@ -286,11 +286,11 @@ public class MainActivity extends Activity {
 
 				info += (new Date().toLocaleString());
 				info += " X= " + X.getText().toString() + " Y= "
-						+ Y.getText().toString() + " ´ÎÊı£º"
-						+ times.getText().toString() + " ¼ä¸ô£º"
+						+ Y.getText().toString() + " æ¬¡æ•°ï¼š"
+						+ times.getText().toString() + " é—´éš”ï¼š"
 						+ interval.getText().toString() + "ms\n";
 
-				timer.schedule(new TimerTask() {//¶¨Ê±Æ÷
+				timer.schedule(new TimerTask() {//å®šæ—¶å™¨
 
 					@Override
 					public void run() {
@@ -308,7 +308,7 @@ public class MainActivity extends Activity {
 							writeToFile(fileName, info);
 							info = "";
 
-							Toast.makeText(MainActivity.this, "É¨ÃèÍê³É£¡", 9000).show();
+							Toast.makeText(MainActivity.this, "æ‰«æå®Œæˆï¼", 9000).show();
 						}
 					}
 				}, 0, Integer.parseInt(interval.getText().toString()));*/
@@ -324,8 +324,8 @@ public class MainActivity extends Activity {
 
 			public void onClick(View v) {
 
-				Point nearestPoint = calculate(); //¼ÆËã½á¹û
-				//´òÓ¡½á¹û
+				Point nearestPoint = calculate(); //è®¡ç®—ç»“æœ
+				//æ‰“å°ç»“æœ
 				StringBuilder sBuilder = new StringBuilder();
 				
 /*				int i;					
@@ -362,7 +362,7 @@ public class MainActivity extends Activity {
 	}
 	
 	/**
-	 * »ñÈ¡µ±Ç°µÄµãµÄ¸÷¸öAPÇ¿¶Èlevel
+	 * è·å–å½“å‰çš„ç‚¹çš„å„ä¸ªAPå¼ºåº¦level
 	 * @return
 	 */
 	public void getNowPoint(final int timesValue,int interval) {
@@ -370,7 +370,7 @@ public class MainActivity extends Activity {
 		fileName = fileNameEditText.getText().toString();	
 
 		tempPoint.aps.clear();
-		//Çø±ğ²ÉÑùÈ¡µãºÍµ±Ç°²âÊÔÈ¡µã
+		//åŒºåˆ«é‡‡æ ·å–ç‚¹å’Œå½“å‰æµ‹è¯•å–ç‚¹
 		if(!X.getText().toString().equals("") && !Y.getText().toString().equals("")){
 		tempPoint.x = -1;
 		tempPoint.y = -1;
@@ -379,16 +379,16 @@ public class MainActivity extends Activity {
 
 		info += (new Date().toLocaleString());
 		info += " X= " + X.getText().toString() + " Y= "
-				+ Y.getText().toString() + " ´ÎÊı£º"
-				+ timesField.getText().toString() + " ¼ä¸ô£º"
+				+ Y.getText().toString() + " æ¬¡æ•°ï¼š"
+				+ timesField.getText().toString() + " é—´éš”ï¼š"
 				+ interval + "ms\n";
 		}
 		wifiText.setText("\nStarting Scan...\n");
 		
-//		// Çå¿ÕtimerÀïÃæµÄËùÓĞÈÎÎñ
+//		// æ¸…ç©ºtimeré‡Œé¢çš„æ‰€æœ‰ä»»åŠ¡
 //		timer.purge();
-//		// ÖØĞÂ²¼ÖÃtimerÈÎÎñ
-//		timer.schedule(new TimerTask() {//¶¨Ê±Æ÷
+//		// é‡æ–°å¸ƒç½®timerä»»åŠ¡
+//		timer.schedule(new TimerTask() {//å®šæ—¶å™¨
 //
 //			@Override
 //			public void run() {
@@ -396,7 +396,7 @@ public class MainActivity extends Activity {
 //					count ++;
 //					handler.sendEmptyMessage(0x123);	
 //				} else {
-//					// È¡Ïûµ±Ç°µÄtimerTask
+//					// å–æ¶ˆå½“å‰çš„timerTask
 //					// Java doc: If the task has been scheduled for repeated execution, it will never run again. 
 //					this.cancel();
 //					count = 0;
@@ -407,7 +407,7 @@ public class MainActivity extends Activity {
 //		}, 0, interval);
 		
 		Map<String,ArrayList<AP>> tempAPs = new HashMap<String,ArrayList<AP>>();
-		// ÇĞ»»Îª·ÇÏß³ÌµÄwhileÑ­»·¡£¡£
+		// åˆ‡æ¢ä¸ºéçº¿ç¨‹çš„whileå¾ªç¯ã€‚ã€‚
 		while (count ++ < timesValue) {
 			tempAPs = scan(tempAPs);
 			try {
@@ -419,7 +419,7 @@ public class MainActivity extends Activity {
 		}
 
 		
-		//±éÀútempAPs£¬È¡¸÷¸öAPÇ¿¶ÈµÄÆ½¾ùÖµĞ´ÈëtempPoint
+		//éå†tempAPsï¼Œå–å„ä¸ªAPå¼ºåº¦çš„å¹³å‡å€¼å†™å…¥tempPoint
 		Set keySet = tempAPs.keySet();
 		
 		for(Object key : keySet) {
@@ -428,17 +428,19 @@ public class MainActivity extends Activity {
 			ap.BSSID = String.valueOf(key);
 			ap.SSID = tempAPs.get(key).get(0).SSID;
 			int sum = 0;
-			double averageLevel = 0;//¶¨ÒåÆ½¾ùÇ¿¶È
-			int APtimes = tempAPs.get(key).size() ;//Í¬Ò»¸öAP²É¼¯´ÎÊı
-			
-			//¼ÆËãÆ½¾ùÇ¿¶È
-			for(int i = 0;i < APtimes; i++) {
-			sum += tempAPs.get(key).get(i).level;
-			}			
-			averageLevel = sum / APtimes;
-			
-			ap.level = averageLevel;
-			tempPoint.aps.add(ap);
+			double averageLevel = 0;//å®šä¹‰å¹³å‡å¼ºåº¦
+			int APtimes = tempAPs.get(key).size() ;//åŒä¸€ä¸ªAPé‡‡é›†æ¬¡æ•°
+
+
+				//è®¡ç®—å¹³å‡å¼ºåº¦
+				for (int i = 0; i < APtimes; i++) {
+					sum += tempAPs.get(key).get(i).level;
+				}
+				averageLevel = sum / APtimes;
+
+				ap.level = averageLevel;
+				tempPoint.aps.add(ap);
+
 		}
 		
 		
@@ -448,12 +450,12 @@ public class MainActivity extends Activity {
 		info += "\n";
 		writeToFile(fileName, info);
 		info = "";
-		Toast.makeText(MainActivity.this, "É¨ÃèÍê³É£¡", 4000).show();
+		Toast.makeText(MainActivity.this, "æ‰«æå®Œæˆï¼", Toast.LENGTH_SHORT).show();
 		
 	}
 	
 	/**
-	 * ¼ÆËã¾àÀë£¬²¢ÇÒÕÒ³ö×îĞ¡¾àÀëµÄµãºÍÖµ¡£
+	 * è®¡ç®—è·ç¦»ï¼Œå¹¶ä¸”æ‰¾å‡ºæœ€å°è·ç¦»çš„ç‚¹å’Œå€¼ã€‚
 	 * @return
 	 */
 	private Point calculate() {
@@ -463,8 +465,8 @@ public class MainActivity extends Activity {
 		
 		double[] distance = new double[totalPoints.size()];
 		
-		// TODO: Õâ¸öµØ·½£¬ getNowPointµ÷ÓÃÁËÒ»¸öTimer£¬ÔÚtimerÍê³ÉÖ®Ç°ÒÑ¾­·µ»ØÁË
-		// Òò´Ë´Ë´¦·µ»ØµÄmytempPointµÄapÓ¦¸ÃÊÇ¿ÕµÄ£¬ºóÃæµÄ¼ÆËã¾Í»á³ö´í£¡
+		// TODO: è¿™ä¸ªåœ°æ–¹ï¼Œ getNowPointè°ƒç”¨äº†ä¸€ä¸ªTimerï¼Œåœ¨timerå®Œæˆä¹‹å‰å·²ç»è¿”å›äº†
+		// å› æ­¤æ­¤å¤„è¿”å›çš„mytempPointçš„apåº”è¯¥æ˜¯ç©ºçš„ï¼Œåé¢çš„è®¡ç®—å°±ä¼šå‡ºé”™ï¼
 		getNowPoint(times, interval);
 		
 		System.out.println(tempPoint.aps.size());
@@ -490,7 +492,7 @@ public class MainActivity extends Activity {
 	}
 
 	/**
-	 * ¼ÆËãÁ½µãÖ®¼äµÄ¾àÀë
+	 * è®¡ç®—ä¸¤ç‚¹ä¹‹é—´çš„è·ç¦»
 	 * @param point1 
 	 * @param point2
 	 * @return
@@ -535,7 +537,7 @@ public class MainActivity extends Activity {
 
 	
 	/**
-	 * ½«WififÉ¨ÃèµÄĞÅÏ¢Ğ´ÈëÎÄ¼ş
+	 * å°†Wififæ‰«æçš„ä¿¡æ¯å†™å…¥æ–‡ä»¶
 	 * @param fileName
 	 * @param content
 	 */
@@ -543,7 +545,7 @@ public class MainActivity extends Activity {
 
 		/*
 		 * File targetFile = new File("/download/" + fileName); if
-		 * (!targetFile.exists()) { // ÎÄ¼ş²»´æÔÚ¡¢ Just´´½¨
+		 * (!targetFile.exists()) { // æ–‡ä»¶ä¸å­˜åœ¨ã€ Juståˆ›å»º
 		 * 
 		 * targetFile.createNewFile(); } OutputStreamWriter osw = null; osw =
 		 * new OutputStreamWriter(new FileOutputStream("/download/" + fileName,
