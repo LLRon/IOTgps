@@ -261,9 +261,10 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
             public void run() {
 
                 StringBuilder sBuilder = new StringBuilder();
-                //打印结果
+
                 sBuilder.append("\nSo the nearestPoint is :Point: " + nearestPoint.x + ", " + nearestPoint.y
-                        + "\n distance is:" + minDistance);
+                        + "\n distance is:" + minDistance+"\n");
+                sBuilder.append("*********************************************");
                 log(sBuilder.toString());
             }
         }, delay);
@@ -329,14 +330,7 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
                     ap.SSID = tempAPs.get(key).get(0).SSID;
                     Map<Double,Integer> levelTimes = new HashMap<Double, Integer>();//用于记录同一个BSSID下，不同强度出现次数
                     double sum = 0;
-                    int APtimes = tempAPs.get(key).size() ;//同一个AP采集次数
-
-                    /*			//计算平均强度
-                                for(int i = 0;i < APtimes; i++) {
-                                sum += tempAPs.get(key).get(i).level;
-                                }
-
-                                ap.level = sum / APtimes; //定义平均强度*/
+                    int APtimes = 0;//同一个AP采集次数
 
                     for(int i = 0 ; i<tempAPs.get(key).size(); i++){
 
@@ -354,12 +348,13 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
                     }
                     //如果次数超越设定阈值，则用于计算平均值
                     for(Double levelkey : levelTimes.keySet()){
-                        if(levelTimes.get(levelkey) > 2) {
+                        if(levelTimes.get(levelkey) > 1) {
                             sum += levelkey * levelTimes.get(levelkey);
-                            APtimes += levelkey;
+                            APtimes += levelTimes.get(levelkey);
                         }
                     }
-
+                    System.out.println(sum+"zong de sum zhi\n");
+                    System.out.println(APtimes+"zong de APtimes zhi\n");
                     ap.level = sum / APtimes;
                     tempPoint.aps.put(ap.BSSID, ap);
                 }
@@ -391,7 +386,11 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
                     tempDistance = calculate_Distance(tempPoint, totalPoints.get(i));
 
                     //System.out.println("No."+i+"tempDistance:"+tempDistance);
-                    logger.log("No." + i + " tempDistance:" + tempDistance + "\n");
+                    if(i==0){
+                        logger.log("\nNo." + i + " tempDistance:" + tempDistance + "\n");
+                    }else {
+                        logger.log("No." + i + " tempDistance:" + tempDistance + "\n");
+                    }
 
                     if (tempDistance <= minDistance) {
                         minDistance = tempDistance;
@@ -400,8 +399,6 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
                 }
                 logger.log("minDistance:" + minDistance + "\n");
                 logger.log("mini:" + mini + "\n");
-                System.out.println("minDistance:" + minDistance);
-                System.out.println("mini:" + mini);
 
                 nearestPoint = totalPoints.get(mini);
 
