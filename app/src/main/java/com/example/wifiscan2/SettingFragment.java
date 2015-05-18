@@ -89,6 +89,15 @@ public class SettingFragment extends Fragment {
         intervalField.setText(String.valueOf(interval));
         fileNameEditText.setText(fileName);
 
+        set.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mListener.onSet(Integer.valueOf(intervalField.getText().toString()),
+                                Integer.valueOf(timesField.getText().toString()),
+                                fileNameEditText.getText().toString());
+            }
+        });
+
         return rootView;
     }
 
