@@ -197,6 +197,8 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
         this.interval = interval;
         this.times = times;
         this.fileName = fileName;
+
+        Toast.makeText(this, "修改成功", Toast.LENGTH_LONG).show();
     }
 
     /**
