@@ -28,7 +28,7 @@ import java.util.ArrayList;
  * Use the {@link MainFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class MainFragment extends Fragment {
+public class MainFragment extends Fragment implements TextLogger {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -92,7 +92,7 @@ public class MainFragment extends Fragment {
 
             @Override
             public void onClick(View v) {
-                mListener.onScan(logger);
+                mListener.onScan();
             }
         });
 
@@ -105,7 +105,7 @@ public class MainFragment extends Fragment {
         calculate.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
-                mListener.onCal(logger);
+                mListener.onCal();
             }
 
         });
@@ -138,6 +138,16 @@ public class MainFragment extends Fragment {
         mListener = null;
     }
 
+    @Override
+    public void log(String message) {
+        logger.append(message);
+    }
+
+    @Override
+    public void clear() {
+        logger.setText("");
+    }
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -151,9 +161,9 @@ public class MainFragment extends Fragment {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
-        void onScan(TextView logger);
+        void onScan();
         void onAdd(int x, int y);
-        void onCal(TextView logger);
+        void onCal();
     }
 
 }
