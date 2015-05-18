@@ -499,7 +499,7 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 		minDistance = Double.MAX_VALUE;
 		int mini = -1;
 		double tempDistance;
-		
+
 		getNowPoint(-1, - 1, times, interval);
 
 		
