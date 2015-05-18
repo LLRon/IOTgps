@@ -71,6 +71,7 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 	double minDistance;//最后一个Point与前面点的最小距离值
 	//int mini;//最小距离值点的下标
 
+	private EditText X, Y, timesField, intervalField, fileNameEditText;
 	private int count = 0;// 扫描次数
 
 	public String fileName = "wifi.txt";
@@ -81,8 +82,10 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 	private int interval = 50;
 	private int times = 20;
 
+
 	//private Timer timer;
 	//private Runnable done;	// 用于timer完成后回调的自定义函数调用
+
 	
 	private Map<String,ArrayList<AP>> scan(Map<String,ArrayList<AP>> tempAPs) {
 		wifiManager.startScan();
@@ -145,6 +148,7 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 				writeToFile(fileName, info);
 				info = "";
 				Toast.makeText(MainActivity.this, "扫描完成！", Toast.LENGTH_LONG).show();
+
 			}
 		}
 	};
@@ -313,24 +317,49 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 
 		
 		//遍历tempAPs，取各个AP强度的平均值写入tempPoint
+
 		Set<String> keySet = tempAPs.keySet();
-		
+
 		for(String key : keySet) {
 			
 			AP ap = new AP();			
 			ap.BSSID = String.valueOf(key);
 			ap.SSID = tempAPs.get(key).get(0).SSID;
-			int sum = 0;
-
+			Map<Double,Integer> levelTimes = new HashMap<Double, Integer>();//用于记录同一个BSSID下，不同强度出现次数
+	    	double sum = 0;
 			int APtimes = tempAPs.get(key).size() ;//同一个AP采集次数
 			
-			//计算平均强度
+/*			//计算平均强度
 			for(int i = 0;i < APtimes; i++) {
 			sum += tempAPs.get(key).get(i).level;
 			}
-			
-			ap.level = sum / APtimes; //定义平均强度
-            tempPoint.aps.put(ap.BSSID, ap);
+
+			ap.level = sum / APtimes; //定义平均强度*/
+
+			for(int i = 0 ; i<tempAPs.get(key).size(); i++){
+
+				double tempLevel = tempAPs.get(key).get(i).level;
+				    //初始化一个强度出现次数
+				if(!levelTimes.keySet().contains(tempLevel)){
+
+					levelTimes.put(tempLevel,1);
+				}
+				if (levelTimes.keySet().contains(tempLevel)){
+					//出现一次，则增加次数
+					int j = levelTimes.get(tempLevel) + 1;
+					levelTimes.put(tempLevel,j);
+				}
+			}
+			//如果次数超越设定阈值，则用于计算平均值
+			for(Double levelkey : levelTimes.keySet()){
+				if(levelTimes.get(levelkey) > 2) {
+					sum += levelkey * levelTimes.get(levelkey);
+					APtimes += levelkey;
+				}
+			}
+
+			ap.level = sum / APtimes;
+			tempPoint.aps.put(ap.BSSID, ap);
 		}
 		
 		
@@ -340,6 +369,7 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 		info += "\n";
 		writeToFile(fileName, info);
 		info = "";
+
 		Toast.makeText(MainActivity.this, "扫描完成！", Toast.LENGTH_LONG).show();
 		
 	}
@@ -351,8 +381,9 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 		minDistance = Double.MAX_VALUE;
 		int mini = -1;
 		double tempDistance;
-
+		
 		getNowPoint(-1, - 1, times, interval);
+
 		
 		System.out.println(tempPoint.aps.size());
 		

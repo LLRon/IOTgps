@@ -6,3 +6,5 @@ New_configuration.launch
 build/
 app/build/
 local.properties
+app/app.iml
+wifiScan2.iml
