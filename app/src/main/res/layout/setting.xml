@@ -6,69 +6,103 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:padding="20dp">
 
-    <GridLayout
+    <LinearLayout
+        android:paddingTop="50dp"
+        android:paddingBottom="50dp"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:columnCount="2"
-        android:padding="5dp" >
-
-        <EditText
-            android:id="@+id/duration"
-            android:layout_width="wrap_content"
-            android:layout_column="1"
-            android:layout_gravity="fill_horizontal|top"
-            android:layout_row="3"
-            android:ems="10"
-            android:inputType="number" >
-
-            <requestFocus />
-        </EditText>
-
-        <EditText
-            android:id="@+id/times"
-            android:layout_width="wrap_content"
-            android:layout_column="1"
-            android:layout_gravity="fill_horizontal|top"
-            android:layout_row="4"
-            android:ems="10"
-            android:inputType="number" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
         <TextView
-            android:id="@+id/textView4"
-            android:layout_column="0"
-            android:layout_gravity="left|center_vertical"
-            android:layout_row="3"
-            android:text="Duration" />
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:layout_marginBottom="20dp"
+            android:text="设置"
+            android:id="@+id/textView6"/>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/textView4"
+                android:layout_gravity="left|center_vertical"
+                android:text="扫描间隔"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:paddingRight="10dp"/>
+
+            <EditText
+                android:id="@+id/duration"
+                android:layout_width="wrap_content"
+                android:layout_gravity="fill_horizontal|top"
+                android:ems="10"
+                android:inputType="number"
+                android:layout_height="wrap_content">
+
+                <requestFocus />
+            </EditText>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/textView5"
+                android:layout_gravity="right|center_vertical"
+                android:text="扫描次数"
+                android:layout_height="wrap_content"
+                android:layout_width="80dp"
+                android:paddingRight="10dp"
+                android:gravity="right"/>
+
+            <EditText
+                android:id="@+id/times"
+                android:layout_width="wrap_content"
+                android:layout_gravity="fill_horizontal|top"
+                android:ems="10"
+                android:inputType="number"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/textView3"
+                android:layout_gravity="right|center_vertical"
+                android:text="文件名称"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:paddingRight="10dp"/>
+
+            <EditText
+                android:id="@+id/file"
+                android:layout_width="wrap_content"
+                android:layout_gravity="fill_horizontal|top"
+                android:ems="10"
+                android:layout_height="wrap_content"
+                />
+
+        </LinearLayout>
 
         <Button
             android:id="@+id/set"
-            android:layout_column="1"
             android:layout_gravity="right|top"
-            android:layout_row="6"
-            android:text="Set" />
+            android:text="Set"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"/>
 
-        <EditText
-            android:id="@+id/file"
-            android:layout_width="wrap_content"
-            android:layout_column="1"
-            android:layout_gravity="fill_horizontal|top"
-            android:layout_row="5"
-            android:ems="10" />
-
-        <TextView
-            android:id="@+id/textView5"
-            android:layout_column="0"
-            android:layout_gravity="right|center_vertical"
-            android:layout_row="4"
-            android:text="Times" />
-
-        <TextView
-            android:id="@+id/textView3"
-            android:layout_column="0"
-            android:layout_gravity="right|center_vertical"
-            android:layout_row="5"
-            android:text="file" />
-
-    </GridLayout>
+    </LinearLayout>
 
 </ScrollView>
