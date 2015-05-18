@@ -1,7 +1,7 @@
 package com.example.wifiscan2;
 
 /**
- * AP£¨access point)µãÖ»°üº¬ SSID,level
+ * APï¼ˆaccess point)ç‚¹åªåŒ…å« SSID,level
  * @author Guangliang Liu
  *
  */

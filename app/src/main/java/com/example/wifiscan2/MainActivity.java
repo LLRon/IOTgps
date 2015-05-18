@@ -57,29 +57,21 @@ public class MainActivity extends Activity {
 	double minDistance;//最后一个Point与前面点的最小距离值
 	//int mini;//最小距离值点的下标
 
-	private Button start;
-	private Button calculate;
-	private Button scan;
-	private Button set;
-	
 	private EditText X, Y, timesField, intervalField, fileNameEditText;
-
-
 	private int count = 0;// 扫描次数
-	//private int APcount;// 接入点的个数;
 
 	public String fileName;
-	PrintStream ps;
 
 	String info = "";
 	
 	// settings
 	private int interval = 50;
 	private int times = 20;
-	private String path = "wifi.txt";
 
-	private Timer timer;
-	private Runnable done;	// 用于timer完成后回调的自定义函数调用
+
+	//private Timer timer;
+	//private Runnable done;	// 用于timer完成后回调的自定义函数调用
+
 	
 	private Map<String,ArrayList<AP>> scan(Map<String,ArrayList<AP>> tempAPs) {
 		wifiManager.startScan();
@@ -199,6 +191,7 @@ public class MainActivity extends Activity {
 		 * 此方法(1)将从每次扫描的结果中AP点最多的一次，并将此点信息加入到totalPoints中，
 		 * (2)同时构造AP点的level的最小值集合,(3)将检测的结果信息写入文件中
 		 */
+		@Override
 		public void handleMessage(Message msg) {
 			if (msg.what == 0x123) {
 				// not finish
@@ -209,7 +202,8 @@ public class MainActivity extends Activity {
 				info += "\n";
 				writeToFile(fileName, info);
 				info = "";
-				Toast.makeText(MainActivity.this, "扫描完成！", Toast.LENGTH_SHORT).show();
+				Toast.makeText(MainActivity.this, "扫描完成！", Toast.LENGTH_LONG).show();
+
 			}
 		}
 	};
@@ -221,10 +215,10 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 
 		wifiText = (TextView) findViewById(R.id.wifiText);
-		start = (Button) findViewById(R.id.add);
-		calculate = (Button) findViewById(R.id.cal);
-		scan = (Button) findViewById(R.id.scan);
-		set = (Button) findViewById(R.id.set);
+		Button start = (Button) findViewById(R.id.add);
+		Button calculate = (Button) findViewById(R.id.cal);
+		Button scan = (Button) findViewById(R.id.scan);
+		Button set = (Button) findViewById(R.id.set);
 		X = (EditText) findViewById(R.id.x);
 		Y = (EditText) findViewById(R.id.y);
 		timesField = (EditText) findViewById(R.id.times);
@@ -234,12 +228,12 @@ public class MainActivity extends Activity {
 		// display the default value
 		timesField.setText(String.valueOf(times));
 		intervalField.setText(String.valueOf(interval));
-		fileNameEditText.setText(String.valueOf(path));
+		fileNameEditText.setText(String.valueOf("wifi.txt"));
 		
 
 		wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		
-		timer = new Timer();
+		//timer = new Timer();
 		
 		set.setOnClickListener(new OnClickListener() {
 
@@ -363,7 +357,6 @@ public class MainActivity extends Activity {
 	
 	/**
 	 * 获取当前的点的各个AP强度level
-	 * @return
 	 */
 	public void getNowPoint(final int timesValue,int interval) {
 		tempPoint = new Point();
@@ -377,7 +370,7 @@ public class MainActivity extends Activity {
 		tempPoint.x = Integer.valueOf(X.getText().toString());
 		tempPoint.y = Integer.valueOf(Y.getText().toString());		
 
-		info += (new Date().toLocaleString());
+		info += (new Date().toString());
 		info += " X= " + X.getText().toString() + " Y= "
 				+ Y.getText().toString() + " 次数："
 				+ timesField.getText().toString() + " 间隔："
@@ -420,27 +413,49 @@ public class MainActivity extends Activity {
 
 		
 		//遍历tempAPs，取各个AP强度的平均值写入tempPoint
-		Set keySet = tempAPs.keySet();
-		
-		for(Object key : keySet) {
+
+		Set<String> keySet = tempAPs.keySet();
+
+		for(String key : keySet) {
 			
 			AP ap = new AP();			
 			ap.BSSID = String.valueOf(key);
 			ap.SSID = tempAPs.get(key).get(0).SSID;
-			int sum = 0;
-			double averageLevel = 0;//定义平均强度
+			Map<Double,Integer> levelTimes = new HashMap<Double, Integer>();//用于记录同一个BSSID下，不同强度出现次数
+	    	double sum = 0;
 			int APtimes = tempAPs.get(key).size() ;//同一个AP采集次数
+			
+/*			//计算平均强度
+			for(int i = 0;i < APtimes; i++) {
+			sum += tempAPs.get(key).get(i).level;
+			}
+			
+			ap.level = sum / APtimes; //定义平均强度*/
 
+			for(int i = 0 ; i<tempAPs.get(key).size(); i++){
 
-				//计算平均强度
-				for (int i = 0; i < APtimes; i++) {
-					sum += tempAPs.get(key).get(i).level;
+				double tempLevel = tempAPs.get(key).get(i).level;
+				    //初始化一个强度出现次数
+				if(!levelTimes.keySet().contains(tempLevel)){
+
+					levelTimes.put(tempLevel,1);
 				}
-				averageLevel = sum / APtimes;
+				if (levelTimes.keySet().contains(tempLevel)){
+					//出现一次，则增加次数
+					int j = levelTimes.get(tempLevel) + 1;
+					levelTimes.put(tempLevel,j);
+				}
+			}
+			//如果次数超越设定阈值，则用于计算平均值
+			for(Double levelkey : levelTimes.keySet()){
+				if(levelTimes.get(levelkey) > 2) {
+					sum += levelkey * levelTimes.get(levelkey);
+					APtimes += levelkey;
+				}
+			}
 
-				ap.level = averageLevel;
-				tempPoint.aps.add(ap);
-
+			ap.level = sum / APtimes;
+			tempPoint.aps.add(ap);
 		}
 		
 		
@@ -450,21 +465,19 @@ public class MainActivity extends Activity {
 		info += "\n";
 		writeToFile(fileName, info);
 		info = "";
-		Toast.makeText(MainActivity.this, "扫描完成！", Toast.LENGTH_SHORT).show();
+
+		Toast.makeText(MainActivity.this, "扫描完成！", Toast.LENGTH_LONG).show();
 		
 	}
 	
 	/**
 	 * 计算距离，并且找出最小距离的点和值。
-	 * @return
 	 */
 	private Point calculate() {
 		minDistance = Double.MAX_VALUE;
 		int mini = -1;
 		double tempDistance;
-		
-		double[] distance = new double[totalPoints.size()];
-		
+
 		// TODO: 这个地方， getNowPoint调用了一个Timer，在timer完成之前已经返回了
 		// 因此此处返回的mytempPoint的ap应该是空的，后面的计算就会出错！
 		getNowPoint(times, interval);
@@ -476,8 +489,7 @@ public class MainActivity extends Activity {
 			
 			//System.out.println("No."+i+"tempDistance:"+tempDistance);
 			wifiText.append("No."+i+" tempDistance:"+tempDistance + "\n");
-			
-			distance[i] = tempDistance;
+
 			if (tempDistance <= minDistance) {
 				minDistance = tempDistance;
 				mini = i;
@@ -493,13 +505,12 @@ public class MainActivity extends Activity {
 
 	/**
 	 * 计算两点之间的距离
-	 * @param point1 
-	 * @param point2
-	 * @return
+	 * @param point1 First point
+	 * @param point2 Second point
+	 * @return double
 	 */
 	private double calculate_Distance(Point point1, Point point2) {
 		float result = 0.0f;
-		String str;
 		Map<String, Double> tempMap1 = new HashMap<String, Double>();
 		Map<String, Double> tempMap2 = new HashMap<String, Double>();
 
@@ -513,9 +524,7 @@ public class MainActivity extends Activity {
 			tempMap1.put(point1.aps.get(i).BSSID, point1.aps.get(i).level);
 		}
 
-		Iterator<String> iterator = minLevel.keySet().iterator();
-		while (iterator.hasNext()) {
-			str = iterator.next();
+		for (String str : minLevel.keySet()) {
 			if (tempMap1.containsKey(str) && tempMap2.containsKey(str)) {
 				result += (tempMap1.get(str) - tempMap2.get(str))
 						* (tempMap1.get(str) - tempMap2.get(str));
@@ -538,8 +547,8 @@ public class MainActivity extends Activity {
 	
 	/**
 	 * 将Wifif扫描的信息写入文件
-	 * @param fileName
-	 * @param content
+	 * @param fileName the file name
+	 * @param content content to be written
 	 */
 	private void writeToFile(String fileName, String content) {
 
