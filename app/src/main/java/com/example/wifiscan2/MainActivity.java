@@ -53,7 +53,8 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends FragmentActivity implements MainFragment.OnFragmentInteractionListener, SettingFragment.OnFragmentInteractionListener {
+public class MainActivity extends FragmentActivity implements MainFragment.OnFragmentInteractionListener,
+        SettingFragment.OnFragmentInteractionListener {
 
     // save the fragment
     ArrayList<Fragment> mFragments;
@@ -64,25 +65,32 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 
 	private WifiManager wifiManager;
 	//private Point point;
+
 	private ArrayList<Point> totalPoints = new ArrayList<Point>();// 所有的测试点集合
-	Map<String, Integer> minLevel = new HashMap<String, Integer>();// 检测到所有的AP点的level的最小值集合
+	private Map<String, Integer> minLevel = new HashMap<String, Integer>();// 检测到所有的AP点的level的最小值集合
 
+    // 计算or扫描用的临时点
 	private Point tempPoint;
-	double minDistance;//最后一个Point与前面点的最小距离值
-	//int mini;//最小距离值点的下标
+    // 计算得到的最近点
+    private Point nearestPoint;
+    // 计算得到的最短差异度
+	private double minDistance;//最后一个Point与前面点的最小距离值
 
-	private int count = 0;// 扫描次数
+    private final int DONE = 0x124;
+    private final int ADD = 0x122;
+    private final int LOG = 0x123;
 
-	public String fileName = "wifi.txt";
-
-	String info = "";
+	private String info = "";
 	
 	// settings
 	private int interval = 50;
 	private int times = 20;
+    private String fileName = "wifi.txt";
+    // using for postDelayed delay time
+    private int delay;
 
-	//private Timer timer;
-	//private Runnable done;	// 用于timer完成后回调的自定义函数调用
+    // 展示信息用
+    private TextLogger logger;
 	
 	private Map<String,ArrayList<AP>> scan(Map<String,ArrayList<AP>> tempAPs) {
 		wifiManager.startScan();
@@ -90,7 +98,6 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 
         //将所有扫描到的AP点强度取平均值作为AP的level
         tempPoint.aps.clear();
-		info += String.valueOf(count) + "\n";
 
         ArrayList<AP> tempAPsList;
 		
@@ -135,19 +142,26 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 		 */
 		@Override
 		public void handleMessage(Message msg) {
-			if (msg.what == 0x123) {
-				// not finish
-				//scan函数改变，参数添加
-				scan(new HashMap<String,ArrayList<AP>>());
-			} else if (msg.what == 0x124) {
+			if (msg.what == DONE) {
 				// finish
-				info += "\n";
-				writeToFile(fileName, info);
-				info = "";
 				Toast.makeText(MainActivity.this, "扫描完成！", Toast.LENGTH_LONG).show();
 			}
+            if (msg.what == LOG) {
+                logger.log((String)msg.obj);
+            }
+            if (msg.what == ADD) {
+                totalPoints.add(tempPoint);
+            }
 		}
 	};
+
+
+    private void log(String message) {
+        Message msg = Message.obtain();
+        msg.what = LOG;
+        msg.obj = message;
+        handler.sendMessage(msg);
+    }
 
 
 	@Override
@@ -163,7 +177,13 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
         bundle.putInt("times", times);
 
         // add in two fragments
-        mFragments.add(new MainFragment());
+        MainFragment mainFrag = new MainFragment();
+
+        // setup the logger
+        logger = mainFrag;
+
+        mFragments.add(mainFrag);
+
         SettingFragment settingFrag = new SettingFragment();
         settingFrag.setArguments(bundle);
         mFragments.add(settingFrag);
@@ -197,21 +217,22 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 
     /**
      * 一次扫描的测试函数
-     * @param logger 记录器
      */
     @Override
-    public void onScan(TextView logger) {
-        tempPoint = new Point();
-        //参数改变
-        //scan(new HashMap<String,ArrayList<AP>>());
+    public void onScan() {
+        delay = 0;
         // 临时点的x y默认为 -1 -1.
-        getNowPoint(-1, -1, 10,200);
-        String str = "";
-
-        for(String key : tempPoint.aps.keySet()) {
-            str += tempPoint.aps.get(key).SSID + ": " + String.valueOf(tempPoint.aps.get(key).level) + "\n";
-        }
-        logger.setText(str);
+        getNowPoint(-1, -1, times, interval);
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                String str = "";
+                for (String key : tempPoint.aps.keySet()) {
+                    str += tempPoint.aps.get(key).SSID + ": " + String.valueOf(tempPoint.aps.get(key).level) + "\n";
+                }
+                log(str);
+            }
+        }, delay);
     }
 
     /**
@@ -221,24 +242,28 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
      */
     @Override
     public void onAdd(int x, int y) {
+        delay = 0;
         getNowPoint(x, y, times,interval);
-
-        System.out.println(tempPoint.aps.size());
-        totalPoints.add(tempPoint);
+        handler.sendEmptyMessage(ADD);
     }
 
     @Override
-    public void onCal(TextView logger) {
+    public void onCal() {
+        delay = 0;
+        getNowPoint(-1, - 1, times, interval);
+        calculate(); //计算结果
 
-        Point nearestPoint = calculate(logger); //计算结果
-        //打印结果
-        StringBuilder sBuilder = new StringBuilder();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
 
-        sBuilder.append("\nSo the nearestPoint is :Point: " + nearestPoint.x + ", " + nearestPoint.y
-                + "\n distance is:" + minDistance);
-
-        logger.append(sBuilder.toString());
-
+                StringBuilder sBuilder = new StringBuilder();
+                //打印结果
+                sBuilder.append("\nSo the nearestPoint is :Point: " + nearestPoint.x + ", " + nearestPoint.y
+                        + "\n distance is:" + minDistance);
+                log(sBuilder.toString());
+            }
+        }, delay);
     }
 
     private class SettingPagerAdapter extends FragmentStatePagerAdapter {
@@ -258,11 +283,11 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
             return mFragments.size();
         }
     }
-	
+
 	/**
 	 * 获取当前的点的各个AP强度level
 	 */
-	public void getNowPoint(int x, int y, final int timesValue,int interval) {
+	public void getNowPoint(int x, int y, final int timesValue,final int interval) {
 		tempPoint = new Point();
 
 		tempPoint.aps.clear();
@@ -277,102 +302,120 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 				+ timesValue + " 间隔："
 				+ interval + "ms\n";
 
-		Toast.makeText(this, "Start scanning", Toast.LENGTH_LONG);
-		
-//		// 清空timer里面的所有任务
-//		timer.purge();
-//		// 重新布置timer任务
+		Toast.makeText(this, "Start scanning", Toast.LENGTH_LONG).show();
+
+        final Map<String,ArrayList<AP>> tempAPs = new HashMap<String,ArrayList<AP>>();
+
+        // 每次扫描点的Runable，用于置入消息队列中。
+        final Runnable scan = new Runnable() {
+            @Override
+            public void run() {
+                scan(tempAPs);
+            }
+        };
+        // 扫描点后的加工回调函数
+        final Runnable tact = new Runnable() {
+            @Override
+            public void run() {
+                //遍历tempAPs，取各个AP强度的平均值写入tempPoint
+                Set<String> keySet = tempAPs.keySet();
+
+                for(String key : keySet) {
+
+                    AP ap = new AP();
+                    ap.BSSID = String.valueOf(key);
+                    ap.SSID = tempAPs.get(key).get(0).SSID;
+                    int sum = 0;
+
+                    int APtimes = tempAPs.get(key).size() ;//同一个AP采集次数
+
+                    //计算平均强度
+                    for(int i = 0;i < APtimes; i++) {
+                        sum += tempAPs.get(key).get(i).level;
+                    }
+
+                    ap.level = sum / APtimes; //定义平均强度
+                    tempPoint.aps.put(ap.BSSID, ap);
+
+
+                }
+            }
+        };
+
+		// 清空timer里面的所有任务
+		// timer.purge();
+		// 重新布置timer任务
 //		timer.schedule(new TimerTask() {//定时器
+//            int count = timesValue;
 //
 //			@Override
 //			public void run() {
-//				if (count < timesValue) {
-//					count ++;
-//					handler.sendEmptyMessage(0x123);	
+//				if (count-- > 0) {
+//					handler.post(scan);
 //				} else {
 //					// 取消当前的timerTask
-//					// Java doc: If the task has been scheduled for repeated execution, it will never run again. 
+//					// Java doc: If the task has been scheduled for repeated execution, it will never run again.
 //					this.cancel();
-//					count = 0;
 //
-//					handler.sendEmptyMessage(0x124);
+//					handler.post(tact);
+//                    handler.sendEmptyMessage(DONE);
 //				}
 //			}
 //		}, 0, interval);
-		
-		Map<String,ArrayList<AP>> tempAPs = new HashMap<String,ArrayList<AP>>();
+        int count = timesValue;
+        while (count -- > 0) {
+            handler.postDelayed(scan, delay);
+            delay += interval;
+        }
+        handler.postDelayed(tact, delay);
+        handler.sendEmptyMessage(DONE);
+
+
 		// 切换为非线程的while循环。。
-		while (count ++ < timesValue) {
-			tempAPs = scan(tempAPs);
-			try {
-				Thread.sleep(interval);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+//		while (count ++ < timesValue) {
+//			scan(tempAPs);
+//			try {
+//				Thread.sleep(interval);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//		}
 
-		
-		//遍历tempAPs，取各个AP强度的平均值写入tempPoint
-		Set<String> keySet = tempAPs.keySet();
-		
-		for(String key : keySet) {
-			
-			AP ap = new AP();			
-			ap.BSSID = String.valueOf(key);
-			ap.SSID = tempAPs.get(key).get(0).SSID;
-			int sum = 0;
-
-			int APtimes = tempAPs.get(key).size() ;//同一个AP采集次数
-			
-			//计算平均强度
-			for(int i = 0;i < APtimes; i++) {
-			sum += tempAPs.get(key).get(i).level;
-			}
-			
-			ap.level = sum / APtimes; //定义平均强度
-            tempPoint.aps.put(ap.BSSID, ap);
-		}
-		
-		
-	//	tempPoint.aps.add(object);
-		// finish
-		count = 0;
-		info += "\n";
-		writeToFile(fileName, info);
-		info = "";
-		Toast.makeText(MainActivity.this, "扫描完成！", Toast.LENGTH_LONG).show();
-		
 	}
 	
 	/**
 	 * 计算距离，并且找出最小距离的点和值。
 	 */
-	private Point calculate(TextView logger) {
-		minDistance = Double.MAX_VALUE;
-		int mini = -1;
-		double tempDistance;
 
-		getNowPoint(-1, - 1, times, interval);
-		
-		System.out.println(tempPoint.aps.size());
-		
-		for (int i = 0; i < totalPoints.size(); i++) {
-			tempDistance = calculate_Distance(tempPoint, totalPoints.get(i));
-			
-			//System.out.println("No."+i+"tempDistance:"+tempDistance);
-            logger.append("No."+i+" tempDistance:"+tempDistance + "\n");
+	private void calculate() {
+		handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
 
-			if (tempDistance <= minDistance) {
-				minDistance = tempDistance;
-				mini = i;
-			}
-		}
-        logger.append("minDistance:"+minDistance+"\n");
-        logger.append("mini:"+mini+"\n");
-		System.out.println("minDistance:"+minDistance);
-		System.out.println("mini:"+mini);
-		return totalPoints.get(mini);
+                minDistance = Double.MAX_VALUE;
+                int mini = -1;
+                double tempDistance;
 
+                for (int i = 0; i < totalPoints.size(); i++) {
+                    tempDistance = calculate_Distance(tempPoint, totalPoints.get(i));
+
+                    //System.out.println("No."+i+"tempDistance:"+tempDistance);
+                    logger.log("No." + i + " tempDistance:" + tempDistance + "\n");
+
+                    if (tempDistance <= minDistance) {
+                        minDistance = tempDistance;
+                        mini = i;
+                    }
+                }
+                logger.log("minDistance:" + minDistance + "\n");
+                logger.log("mini:" + mini + "\n");
+                System.out.println("minDistance:" + minDistance);
+                System.out.println("mini:" + mini);
+
+                nearestPoint = totalPoints.get(mini);
+
+            }
+        }, delay);
 	}
 
 	/**
@@ -481,7 +524,6 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	@Override
@@ -495,6 +537,5 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 		Toast.makeText(this, "Start scanning", Toast.LENGTH_LONG).show();
 		return super.onMenuItemSelected(featureId, item);
 	}
-
 }
 
