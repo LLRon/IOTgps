@@ -1,10 +1,11 @@
 package com.example.wifiscan2;
 
 import java.util.ArrayList;
-
+import java.util.HashMap;
 
 public class Point {
-	ArrayList<AP> aps = new ArrayList<AP>();
+    // 保存某个点的特征AP
+	HashMap<String, AP> aps = new HashMap<String, AP>();
 	int x;
 	int y;
 }

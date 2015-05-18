@@ -88,34 +88,29 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 		wifiManager.startScan();
 		List<ScanResult> wifiList = wifiManager.getScanResults();
 
-		
-		//将所有扫描到的AP点强度取平均值作为AP的level		
-		System.out.println("wifiList " + wifiList.size());
-		System.out.println("minLevel " + minLevel.size());
-		
-		tempPoint.aps.clear();
+        //将所有扫描到的AP点强度取平均值作为AP的level
+        tempPoint.aps.clear();
 		info += String.valueOf(count) + "\n";
+
+        ArrayList<AP> tempAPsList;
 		
 		for (int i = 0; i < wifiList.size(); i++) {
 
 			ScanResult ret = wifiList.get(i);			
 			String BSSID = ret.BSSID;
-			String SSID = ret.SSID;		
-			AP ap;
-			ArrayList<AP> tempAPsList = new ArrayList<AP>();
-			
-			ap = new AP();			
+			String SSID = ret.SSID;
+
+			AP ap = new AP();
 			ap.SSID = SSID;
 			ap.BSSID = BSSID;
-			ap.level = ret.level;			
-			
+			ap.level = ret.level;
+
 			//搜索原来的tempAPs中是否含有本次扫描到的AP点
 			if(!tempAPs.keySet().contains(BSSID)) {
-
+                tempAPsList = new ArrayList<AP>();
 				tempAPsList.add(ap);				
 				tempAPs.put(BSSID, tempAPsList);
 			} else{
-				
 				tempAPs.get(BSSID).add(ap);				
 			}
 			
@@ -128,73 +123,9 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 			} else {
 				minLevel.put(BSSID, ret.level);
 			}
-			
-			info += "BSSID:" + BSSID
-					+ "  level:" + ret.level + " "
-					+ "frequency" + ret.frequency
-					+ "\n";
-			// write("BSSID:" + wifiList.get(i).BSSID +
-			// "  level:"
-			// + wifiList.get(i).level + " ");
 		}
-		// ps.println();
-		info += "\n";
+
 		return tempAPs;
-		// write("\n");
-/*		if (tempPoint.aps.size() < wifiList.size()) {
-			tempPoint.aps.clear();
-			info += String.valueOf(count) + "\n";
-			
-			for (int i = 0; i < wifiList.size(); i++) {
-
-				ScanResult ret = wifiList.get(i);				
-				String BSSID = ret.BSSID;
-				String SSID = ret.SSID;				
-				AP ap = new AP();
-
-				if (minLevel.keySet().contains(BSSID)) {
-					if (minLevel.get(BSSID) > ret.level)
-						minLevel.put(BSSID, ret.level);
-				} else {
-					minLevel.put(BSSID, ret.level);
-				}
-				
-				ap.SSID = SSID;
-				ap.BSSID = BSSID;
-				ap.level = ret.level;
-				tempPoint.aps.add(ap);
-				
-				info += "BSSID:" + BSSID
-						+ "  level:" + ret.level + " "
-						+ "frequency" + ret.frequency
-						+ "\n";
-				// write("BSSID:" + wifiList.get(i).BSSID +
-				// "  level:"
-				// + wifiList.get(i).level + " ");
-			}
-			// ps.println();
-			info += "\n";
-			// write("\n");
-		} else {
-			info += String.valueOf(count) + "\n";
-			// write(String.valueOf(count)+"\n");
-			for (int i = 0; i < wifiList.size(); i++) {
-				ScanResult ret = wifiList.get(i);
-				String BSSID = ret.BSSID;
-
-				info += "BSSID:" + BSSID
-						+ "  level:" + ret.level + " "
-						+ "frequency" + ret.frequency
-						+ "\n";
-				// write("BSSID:" + wifiList.get(i).BSSID +
-				// "  level:"
-				// + wifiList.get(i).level + " ");
-			}
-			// ps.println();
-			info += "\n";
-			// write("\n");
-		}*/
-		
 	}
 	
 	private Handler handler = new Handler() {
@@ -251,6 +182,12 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 
     }
 
+    /**
+     * 设置参数
+     * @param interval 扫描时间间隔
+     * @param times 扫描次数
+     * @param fileName 保持的文件名字
+     */
     @Override
     public void onSet(int interval, int times, String fileName) {
         this.interval = interval;
@@ -258,6 +195,10 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
         this.fileName = fileName;
     }
 
+    /**
+     * 一次扫描的测试函数
+     * @param logger 记录器
+     */
     @Override
     public void onScan(TextView logger) {
         tempPoint = new Point();
@@ -266,57 +207,20 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
         // 临时点的x y默认为 -1 -1.
         getNowPoint(-1, -1, 10,200);
         String str = "";
-        for(int i = 0; i < tempPoint.aps.size(); i ++) {
-            str += tempPoint.aps.get(i).SSID + ": " + String.valueOf(tempPoint.aps.get(i).level) + "\n";
+
+        for(String key : tempPoint.aps.keySet()) {
+            str += tempPoint.aps.get(key).SSID + ": " + String.valueOf(tempPoint.aps.get(key).level) + "\n";
         }
         logger.setText(str);
     }
 
+    /**
+     * 添加新的点
+     * @param x 点的x坐标
+     * @param y 点的y坐标
+     */
     @Override
     public void onAdd(int x, int y) {
-/*				tempPoint = new Point();
-
-				tempPoint.aps.clear();
-				tempPoint.x = -1;
-				tempPoint.y = -1;
-
-				tempPoint.x = Integer.valueOf(X.getText().toString());
-				tempPoint.y = Integer.valueOf(Y.getText().toString());
-
-				timer = new Timer();
-				fileName = fileNamEditText.getText().toString();
-
-				wifiManager.startScan();
-				wifiText.setText("\nStarting Scan...\n");
-
-				info += (new Date().toLocaleString());
-				info += " X= " + X.getText().toString() + " Y= "
-						+ Y.getText().toString() + " 次数："
-						+ times.getText().toString() + " 间隔："
-						+ interval.getText().toString() + "ms\n";
-
-				timer.schedule(new TimerTask() {//定时器
-
-					@Override
-					public void run() {
-						if (count < timesValue) {
-							count ++;
-							handler.sendEmptyMessage(0x123);
-						} else {
-							timer.cancel();
-							X.getText().clear();
-							Y.getText().clear();
-							times.getText().clear();
-							interval.getText().clear();
-							count = 0;
-							info += "\n";
-							writeToFile(fileName, info);
-							info = "";
-
-							Toast.makeText(MainActivity.this, "扫描完成！", 9000).show();
-						}
-					}
-				}, 0, Integer.parseInt(interval.getText().toString()));*/
         getNowPoint(x, y, times,interval);
 
         System.out.println(tempPoint.aps.size());
@@ -330,28 +234,6 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
         //打印结果
         StringBuilder sBuilder = new StringBuilder();
 
-/*			int i;
-        for (i = 0; i < totalPoints.size() - 1; i++) {
-            sBuilder.append("\n");
-            sBuilder.append("Point" + (i + 1) + "X= "
-                    + totalPoints.get(i).x + " Y= "
-                    + totalPoints.get(i).y + "\n");
-            ArrayList<AP> aps = totalPoints.get(i).aps;
-            for (int j = 0; j < aps.size(); j++) {
-                sBuilder.append(aps.get(j).SSID + " "
-                        + aps.get(j).level + "\n");
-            }
-            sBuilder.append("Distance:" + distance[i] + "\n\n");
-        }
-
-        sBuilder.append("The measure point: X= " + totalPoints.get(i).x
-                + " Y= " + totalPoints.get(i).y + "\n");
-        ArrayList<AP> aps = totalPoints.get(i).aps;
-        for (int j = 0; j < aps.size(); j++) {
-            sBuilder.append(aps.get(j).SSID + " " + aps.get(j).level
-                    + "\n");
-        }
-*/
         sBuilder.append("\nSo the nearestPoint is :Point: " + nearestPoint.x + ", " + nearestPoint.y
                 + "\n distance is:" + minDistance);
 
@@ -448,7 +330,7 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 			}
 			
 			ap.level = sum / APtimes; //定义平均强度
-			tempPoint.aps.add(ap);
+            tempPoint.aps.put(ap.BSSID, ap);
 		}
 		
 		
@@ -500,39 +382,74 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 	 * @return double
 	 */
 	private double calculate_Distance(Point point1, Point point2) {
-		float result = 0.0f;
-		Map<String, Double> tempMap1 = new HashMap<String, Double>();
-		Map<String, Double> tempMap2 = new HashMap<String, Double>();
 
-		int i, j;
+        HashMap<String, AP> p1Aps = point1.aps;
+        HashMap<String, AP> p2Aps = point2.aps;
 
-		for (j = 0; j < point2.aps.size(); j++) {
-			tempMap2.put(point2.aps.get(j).BSSID, point2.aps.get(j).level);
-		}
-
-		for (i = 0; i < point1.aps.size(); i++) {
-			tempMap1.put(point1.aps.get(i).BSSID, point1.aps.get(i).level);
-		}
-
-		for (String str : minLevel.keySet()) {
-			if (tempMap1.containsKey(str) && tempMap2.containsKey(str)) {
-				result += (tempMap1.get(str) - tempMap2.get(str))
-						* (tempMap1.get(str) - tempMap2.get(str));
-			}
-
-			if (tempMap1.containsKey(str) && !tempMap2.containsKey(str)) {
-				result += (tempMap1.get(str) - minLevel.get(str))
-						* (tempMap1.get(str) - minLevel.get(str));
-			}
-
-			if (!tempMap1.containsKey(str) && tempMap2.containsKey(str)) {
-				result += (tempMap2.get(str) - minLevel.get(str))
-						* (tempMap2.get(str) - minLevel.get(str));
-			}
-		}
-
-		return Math.sqrt(result);
+        //return geometryDistance(p1Aps, p2Aps);
+        return sinDistance(p1Aps, p2Aps);
 	}
+
+    /**
+     * 使用几何距离来表示相似度
+     * @param vec1 第一个向量
+     * @param vec2 第二个向量
+     * @return 相似度
+     */
+    private double geometryDistance(HashMap<String, AP> vec1, HashMap<String, AP> vec2) {
+        double ret = 0;
+
+        for (String str : minLevel.keySet()) {
+            if (vec1.containsKey(str) && vec2.containsKey(str)) {
+                ret += (vec1.get(str).level - vec2.get(str).level)
+                        * (vec1.get(str).level - vec2.get(str).level);
+            }
+
+            if (vec1.containsKey(str) && !vec2.containsKey(str)) {
+                ret += (vec1.get(str).level - minLevel.get(str))
+                        * (vec1.get(str).level - minLevel.get(str));
+            }
+
+            if (!vec1.containsKey(str) && vec2.containsKey(str)) {
+                ret += (vec2.get(str).level - minLevel.get(str))
+                        * (vec2.get(str).level - minLevel.get(str));
+            }
+        }
+
+        return Math.sqrt(ret);
+    }
+
+    /**
+     * 采用余弦相似性来匹配
+     * @param vec1 第一个点
+     * @param vec2 第二个点
+     * @return 差异度 [0,1] 越小差异度越高
+     */
+    private double sinDistance(HashMap<String, AP> vec1, HashMap<String, AP> vec2) {
+
+        double RSSI1, RSSI2;
+        double sigmaA = 0, sigmaB = 0, sigmaMutiply = 0;
+
+        for (String str : minLevel.keySet()) {
+            if (vec1.containsKey(str)) {
+                RSSI1 = vec1.get(str).level;
+            } else {
+                RSSI1 = minLevel.get(str);
+            }
+
+            if (vec2.containsKey(str)) {
+                RSSI2 = vec2.get(str).level;
+            } else {
+                RSSI2 = minLevel.get(str);
+            }
+
+            sigmaA += RSSI1 * RSSI1;
+            sigmaB += RSSI2 * RSSI2;
+            sigmaMutiply += RSSI1 * RSSI2;
+        }
+
+        return 1.0d - sigmaMutiply / Math.sqrt(sigmaA * sigmaB);
+    }
 
 	
 	/**
