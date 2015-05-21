@@ -9,17 +9,8 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.GridLayout;
-import android.widget.HeaderViewListAdapter;
-import android.widget.ListAdapter;
-import android.widget.ListView;
-import android.widget.SimpleAdapter;
 import android.widget.TextView;
-
-import java.util.ArrayList;
 
 
 /**
@@ -81,34 +72,47 @@ public class MainFragment extends Fragment implements TextLogger {
         ViewGroup rootView = (ViewGroup) inflater.inflate(
                 R.layout.main, container, false);
 
-        Button add = (Button) rootView.findViewById(R.id.add);
+        //Button add = (Button) rootView.findViewById(R.id.add);
         Button calculate = (Button) rootView.findViewById(R.id.cal);
-        Button scan = (Button) rootView.findViewById(R.id.scan);
+        Button scan = (Button) rootView.findViewById(R.id.clear);
+        Button stop = (Button) rootView.findViewById(R.id.stop);
 
         logger = (TextView) rootView.findViewById(R.id.logger);
 
-        final EditText X = (EditText) rootView.findViewById(R.id.x),
-                         Y = (EditText) rootView.findViewById(R.id.y);
+/*        final EditText X = (EditText) rootView.findViewById(R.id.x),
+                         Y = (EditText) rootView.findViewById(R.id.y);*/
 
         scan.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                mListener.onScan();
+                mListener.onClear();
             }
         });
 
-        add.setOnClickListener(new View.OnClickListener() {
+/*        add.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 mListener.onAdd(Integer.valueOf(X.getText().toString()), Integer.valueOf(Y.getText().toString()));
             }
-        });
+        });*/
 
         calculate.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
                 mListener.onCal();
             }
+
+
+
+        });
+
+        stop.setOnClickListener(new View.OnClickListener() {
+
+            public void onClick(View v) {
+                mListener.onStopCal();
+            }
+
+
 
         });
 
@@ -174,9 +178,10 @@ public class MainFragment extends Fragment implements TextLogger {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
-        void onScan();
+        void onClear();
         void onAdd(int x, int y);
         void onCal();
+        void onStopCal();
     }
 
 }

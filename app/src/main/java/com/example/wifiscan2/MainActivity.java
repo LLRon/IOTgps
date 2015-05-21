@@ -13,7 +13,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.PointF;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
@@ -32,6 +38,7 @@ import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 public class MainActivity extends FragmentActivity implements MainFragment.OnFragmentInteractionListener,
@@ -60,18 +67,27 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
     private final int DONE = 0x124;
     private final int ADD = 0x122;
     private final int LOG = 0x123;
+    private final int CLEAR = 0x125;
+    private final int NORESULT = 0x126;
 
 	private String info = "";
 	
 	// settings
 	private int interval = 50;
-	private int times = 20;
+	private int times = 100;
     private String pointFileName = "wifi";
     private String minFileName = "minlevel";
     // using for postDelayed delay time
     private int delay;
 
+    //初始化画笔
+    Paint paint;
+    ImageView iv_canvas;
+    Bitmap baseBitmap;
+    Canvas  canvas;
+
     // 展示信息用
+
     private TextLogger logger;
 	
 	private Map<String,ArrayList<AP>> scan(Map<String,ArrayList<AP>> tempAPs) {
@@ -126,21 +142,33 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 		public void handleMessage(Message msg) {
 			if (msg.what == DONE) {
 				// finish
-				Toast.makeText(MainActivity.this, "扫描完成！", Toast.LENGTH_LONG).show();
+				Toast.makeText(MainActivity.this, "扫描完成！", Toast.LENGTH_SHORT).show();
 
 			}
             if (msg.what == LOG) {
-                logger.log((String)msg.obj);
+                logger.log((String) msg.obj);
             }
             if (msg.what == ADD) {
                 totalPoints.add(tempPoint);
             }
+
+            if(msg.what == CLEAR){
+
+
+                totalPoints.clear();
+            }
+            if(msg.what == NORESULT){
+
+                Toast.makeText(MainActivity.this,"noresult",Toast.LENGTH_SHORT).show();
+            }
 		}
 	};
 
+    Timer t;
     @Override
     protected void onResume() {
         super.onResume();
+
 
         totalPoints = (ArrayList<Point>)readFromFile(pointFileName);
         minLevel = (HashMap<String, Integer>)readFromFile(minFileName);
@@ -219,15 +247,15 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
         this.times = times;
         this.pointFileName = fileName;
 
-        Toast.makeText(this, "修改成功", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "修改成功", Toast.LENGTH_SHORT).show();
     }
 
     /**
      * 一次扫描的测试函数
      */
     @Override
-    public void onScan() {
-        delay = 0;
+    public void onClear() {
+/*        delay = 0;
         // 临时点的x y默认为 -1 -1.
         getNowPoint(-1, -1, times, interval);
         handler.postDelayed(new Runnable() {
@@ -239,7 +267,9 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
                 }
                 log(str);
             }
-        }, delay);
+        }, delay);*/
+
+        handler.sendEmptyMessage(CLEAR);
     }
 
     /**
@@ -251,18 +281,48 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
     public void onAdd(int x, int y) {
         delay = 0;
         getNowPoint(x, y, times,interval);
-        handler.sendEmptyMessage(ADD);
+        handler.sendEmptyMessageDelayed(ADD, delay);
     }
 
     @Override
     public void onCal() {
+        if (t == null) {
+            t = new Timer();
+
+            t.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    cal();
+                }
+            }, 3000, 4000);
+        }
+    }
+
+    public void onStopCal(){
+        t.cancel();
+    }
+
+    private void cal() {
         delay = 0;
-        getNowPoint(-1, - 1, times, interval);
+        getNowPoint(-1, -1, times, interval);
         calculate(); //计算结果
+
+        paint = new Paint();
+        paint.setStrokeWidth(50);
+        paint.setColor(Color.RED);
+
+        iv_canvas = (ImageView) findViewById(R.id.imageView);
+        baseBitmap = Bitmap.createBitmap(iv_canvas.getWidth(),iv_canvas.getHeight(), Bitmap.Config.ARGB_8888);
+        canvas = new Canvas(baseBitmap);
 
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
+
+                if(nearestPoint == null){
+                    handler.sendEmptyMessageDelayed(NORESULT, delay);
+                    return;
+                }
 
                 StringBuilder sBuilder = new StringBuilder();
 
@@ -270,8 +330,12 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
                         + "\n distance is:" + minDistance + "\n");
                 sBuilder.append("*********************************************");
                 log(sBuilder.toString());
+                canvas.drawPoint(nearestPoint.x, nearestPoint.y, paint);
+                iv_canvas.setImageBitmap(baseBitmap);
             }
         }, delay);
+
+        //canvas.drawPoint( nearestPoint.x , nearestPoint.y,paint);
     }
 
     private class SettingPagerAdapter extends FragmentStatePagerAdapter {
@@ -310,7 +374,7 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 				+ timesValue + " 间隔："
 				+ interval + "ms\n";
 
-		Toast.makeText(this, "Start scanning", Toast.LENGTH_LONG).show();
+		//Toast.makeText(this, "Start scanning", Toast.LENGTH_SHORT).show();
 
         final Map<String,ArrayList<AP>> tempAPs = new HashMap<String,ArrayList<AP>>();
 
@@ -357,8 +421,8 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
                             APtimes += levelTimes.get(levelkey);
                         }
                     }
-                    System.out.println(sum+"zong de sum zhi\n");
-                    System.out.println(APtimes+"zong de APtimes zhi\n");
+/*                    System.out.println(sum+"zong de sum zhi\n");
+                    System.out.println(APtimes+"zong de APtimes zhi\n");*/
                     ap.level = (int)Math.round(sum / APtimes);
                     tempPoint.aps.put(ap.BSSID, ap);
                 }
@@ -371,7 +435,7 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
             delay += interval;
         }
         handler.postDelayed(tact, delay);
-        handler.sendEmptyMessage(DONE);
+        handler.sendEmptyMessageDelayed(DONE, delay);
 	}
 	
 	/**
@@ -403,8 +467,11 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
                 }
                 logger.log("minDistance:" + minDistance + "\n");
                 logger.log("mini:" + mini + "\n");
-
-                nearestPoint = totalPoints.get(mini);
+                if(mini == -1 ){
+                    nearestPoint = null;
+                }else {
+                    nearestPoint = totalPoints.get(mini);
+                }
 
             }
         }, delay);
@@ -543,7 +610,7 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
 		wifiManager.startScan();
-		Toast.makeText(this, "Start scanning", Toast.LENGTH_LONG).show();
+		Toast.makeText(this, "Start scanning", Toast.LENGTH_SHORT).show();
 		return super.onMenuItemSelected(featureId, item);
 	}
 
