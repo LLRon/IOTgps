@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import android.graphics.PointF;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
@@ -30,6 +31,7 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.widget.Toast;
 
 public class MainActivity extends FragmentActivity implements MainFragment.OnFragmentInteractionListener,
@@ -544,5 +546,6 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 		Toast.makeText(this, "Start scanning", Toast.LENGTH_LONG).show();
 		return super.onMenuItemSelected(featureId, item);
 	}
+
 }
 
