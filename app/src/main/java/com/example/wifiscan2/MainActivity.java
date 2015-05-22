@@ -286,7 +286,7 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
 
     @Override
     public void onCal() {
-        if (t == null) {
+
             t = new Timer();
 
             t.schedule(new TimerTask() {
@@ -295,7 +295,7 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
                     cal();
                 }
             }, 3000, 4000);
-        }
+
     }
 
     public void onStopCal(){
@@ -330,7 +330,8 @@ public class MainActivity extends FragmentActivity implements MainFragment.OnFra
                         + "\n distance is:" + minDistance + "\n");
                 sBuilder.append("*********************************************");
                 log(sBuilder.toString());
-                canvas.drawPoint(nearestPoint.x, nearestPoint.y, paint);
+                //canvas.drawPoint(nearestPoint.x, nearestPoint.y, paint);
+                canvas.drawCircle(nearestPoint.x, nearestPoint.y,25, paint);
                 iv_canvas.setImageBitmap(baseBitmap);
             }
         }, delay);
